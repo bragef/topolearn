@@ -29,20 +29,21 @@ class GGG():
         self,
         eps=0.1,
         k=20,
-        max_iter = 10
+        max_iter = 10,
+        sigma = 10
     ):
         self.eps = eps            # Pruning threshold
         self.k = k                # Number of component
         self.GG = None            # Graph representation
         self.D = None             # Data dimension
         self.max_iter = max_iter  #
-        self.sigma = 1
+        self.sigma = sigma
         self.means_ = None
         self.mprobs = None
 
     def fit(self, X, y = None):
 
-        X = X * 100
+        #X = X * 100
         self.D = D = X.shape[1]  
 
         # Initalisation with GMM and random points
@@ -65,14 +66,17 @@ class GGG():
         pi[0] *= 1/(N0 + N1)
         pi[1] *= 1/(N0 + N1)
         # No prior info on sigma, initialise with 1
-        sigma = 10
+        sigma = self.sigma
         # Make the distance matrices:
         (self.Q, self.d_edge, self.d_vertex, self.L) = \
              calc_distances(X, DG)
 
         # Run EM algorithm 
         # for i in range(0, self.max_iter):
-        for i in range(0,4):
+        for i in range(0,self.max_iter):
+            if sigma < np.finfo(float).eps:
+                print("Did not converge, sigma = 0")
+                break
             print(f"Iteration {i}, sigma={sigma}")
             (pi, sigma) = self.step_update(pi, sigma)
 
@@ -97,21 +101,28 @@ class GGG():
         
         # Number of data points
         M = self.Q.shape[0]
-
+        # Treat values below this value as zeros
+        zero = np.finfo(float).eps
         # Distributions. 
         # g0: M x N0, g1: M x N1 
         g0 = g0_matrix(self.d_vertex, sigma, self.D)
         g1 = g1_matrix(self.Q, self.d_edge, self.L, sigma, self.D)
         # Pointwise probabilties 
-        p0 = g0 * np.transpose(pi[0])
+        p0 = g0 * np.transpose(pi[0]) 
         p1 = g1 * np.transpose(pi[1])
+
         # Normalisation constants for v_j: M x 1 
         # Aupetit Eq. (2):
-        pvj =  np.reshape( np.sum(p0, axis=1) + np.sum(p1, axis=1), (M, 1))
+        pvj = np.reshape( np.sum(p0, axis=1) + np.sum(p1, axis=1), (M, 1))
+        pvj_inv = np.divide(1, pvj, out=np.zeros_like(pvj), where = pvj > zero)
         # Update mixture probabilities, 
         # Aupetit Eq. (4), pi
-        pi[0] = np.sum( p0 , axis=0) / pvj/ M
-        pi[1] = np.sum( p1 , axis=0) / pvj/ M
+        pi[0] = np.sum( p0 * pvj_inv , axis=0) / M
+        pi[1] = np.sum( p1 * pvj_inv , axis=0) / M
+        print(np.sum(pi))
+        # debug
+        p0 = g0 * np.transpose(pi[0]) 
+        p1 = g1 * np.transpose(pi[1])
         # Update sigma 
         Lt = np.transpose(self.L)
         # Aupetit Eq. (5) 
@@ -122,15 +133,18 @@ class GGG():
             ( (self.Q - Lt) * np.exp(-( self.Q - Lt )**2/(2*sigma**2)) - \
                 self.Q * np.exp( - self.Q**2/( 2*  sigma**2) ))
         # Aupetit Eq. (4), sigma
+        # The zeros have no contribution to sigma, set to 0
+        p1g1 = np.divide(p1, g1, out=np.zeros_like(g1), where = g1 > zero)
 
         sigma_vertices = np.sum(p0 * self.d_vertex**2) 
-        _tmp = p1 * np.power(2*np.pi*sigma**2, - self.D/2) 
-        _tmp /= (g1 * Lt)
+
+        _tmp = p1g1 * np.power(2*np.pi*sigma**2, - self.D/2) 
         _tmp *= np.exp( - self.d_edge**2 / ( 2 * sigma**2) ) 
         _tmp *= ( I1 * ( self.d_edge**2 + sigma**2) + I2 ) 
         sigma_edges = np.sum(_tmp)
 
         sigma = np.sqrt( (sigma_edges + sigma_vertices) / (self.D * M) )
+        sigma = np.sqrt( (sigma_edges + sigma_vertices) )
 
         return((pi, sigma))
 
