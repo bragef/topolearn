@@ -2,7 +2,6 @@ import numpy as np
 import networkx as nx
 import scipy.stats as stats
 from scipy.special import erf
-import random
 from scipy.spatial import Delaunay
 from sklearn import mixture
 from sklearn.cluster import MiniBatchKMeans
@@ -25,12 +24,12 @@ from sklearn.cluster import MiniBatchKMeans
 
 
 class GGG:
-    def __init__(self, eps=0.1, k=20, max_iter=10, sigma=10, init="GNN"):
+    def __init__(self, eps=0.1, k=20, max_iter=10, sigma=10, init_method="GNN"):
         self.eps = eps  # Pruning threshold
         self.k = k  # Number of component
         self.D = None  # Data dimension
         self.max_iter = max_iter  #
-        self.init = init
+        self.init_method = init_method
         # Output
         self.sigma = sigma
         self.graph = None  # Graph representation
@@ -38,13 +37,13 @@ class GGG:
         # Config.
         self.conv_rate = 0.001  # Stop when Δσ/σ < conv_rate
 
+
     def fit(self, X, y=None):
 
-        # X = X * 100
         self.D = D = X.shape[1]
 
         # Init nodes with GMM or KMeans
-        w_init = self.fit_init(X, self.k, method="GMM")
+        w_init = self.fit_init(X, self.k, method=self.init_method)
         # Delauney triangulation
         w_delauney = Delaunay(w_init)
 
@@ -103,7 +102,8 @@ class GGG:
             )
             gmm.fit(X)
             node_centers = gmm.means_
-        else:  # method=='KMeans':
+        else:  
+            # method=='KMeans':
             kmeans = MiniBatchKMeans(n_clusters=n_components, random_state=0).fit(X)
             node_centers = kmeans.cluster_centers_
 

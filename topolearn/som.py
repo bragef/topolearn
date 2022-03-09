@@ -4,12 +4,12 @@ from random import sample
 
 
 class SOM:
-    def __init__(self, graph,  k=1000, alpha=0.05, batch_size=0.2):
+    def __init__(self, graph,  k=1000, alpha=0.05, batch_size=0.2, conv_rate = 0.001):
         self.k = k
         self.alpha = alpha
         self.graph = graph
         self.batch_size = batch_size
-        self.conv_rate = 0.001  # Stop when Δer/err < conv_rate
+        self.conv_rate = conv_rate # Stop when Δer/err < conv_rate
         if not isinstance(graph, nx.Graph):
             raise TypeError("Input graph must be a networkx.Graph. Example: graph=nx.triangular_lattice_graph(10,10)")
 
@@ -27,7 +27,7 @@ class SOM:
         distance_matrix = np.zeros((X.shape[0], n_nodes))
         weights = np.zeros((n_nodes, X.shape[1]))
 
-        # Create a N x k matrix of distances
+        # Create a N (axis=0) x k (axis=1) matrix of distances
         for (i, (n1, point)) in enumerate(layout.items()):
             assert i == n1, "Bug: unstable indexing (python < 3.6?)"
             distance_matrix[:, n1] = np.linalg.norm(X - point, axis=1)
@@ -43,7 +43,7 @@ class SOM:
                 point = X[i, :]
                 node_closest = np.argmin(distance_matrix[i, :])
                 # Todo: Replace with neighborhood-function
-                # We here use a neighborhood function of 1()
+                # We here just use a neighborhood function of 1 for neighbor nodes, 0 else. 
                 neighbors = list(graph.neighbors(node_closest))
                 for n1  in [node_closest] + neighbors:
                     weights[n1, :] = weights[n1, :] + self.alpha * 1 * (
@@ -53,8 +53,9 @@ class SOM:
                     distance_matrix[:, n1] = np.linalg.norm(X - weights[n1, :], axis=1)
             prev_error = error
             # Reconstruction error is just the sum of the shortest distance for each point
-            error = np.sum(np.min(distance_matrix**2, axis=1))
-            print(error)
+            error = np.sum(np.min(distance_matrix, axis=1)**2)
+            if epoch % 100 == 0:
+                print(f"Epoch: {epoch}, error: {error}")
             if error == 0 or abs(prev_error - error) / error < self.conv_rate:
                 print(f"Convergence in {epoch} steps")
                 break

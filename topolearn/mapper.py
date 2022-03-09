@@ -1,7 +1,5 @@
 import numpy as np
-import pandas as pd
 import warnings 
-
 import networkx as nx
 
 from sklearn import mixture
@@ -14,8 +12,7 @@ class Mapper():
         self,
         n_intervals = 10,
         min_clustersize = 2,
-        debug = 0
-            
+        debug = 0    
     ):  
         self.min_clustersize = min_clustersize
         self.n_intervals = n_intervals  
@@ -77,8 +74,8 @@ class Mapper():
  
         return clusters
 
-    # Given the list of clusters found by the algorithm, find the edges. Return 
-    # nx.Graph object 
+    # Given the list of clusters found by the algorithm, find the edges. 
+    # Returns nx.Graph object 
     def connect_clusters(self, clusters):
         prev_interval = []
         graph = nx.Graph()
@@ -101,7 +98,7 @@ class Mapper():
  
 
 # Cluster algorithms.
-# Idea: predict with previous cloud for edges. 
+# 
 def cluster_gaussian(X,  max_clusters = 10):
     bic=[]
     best_gmm = None
@@ -115,7 +112,6 @@ def cluster_gaussian(X,  max_clusters = 10):
                 covariance_type=cov
             )
             gmm.fit(X)
-
             bic.append(gmm.bic(X))
             if bic[-1] < lowest_bic:
                 lowest_bic = bic[-1]
@@ -125,7 +121,8 @@ def cluster_gaussian(X,  max_clusters = 10):
 
     return best_fit
 
-
+# Hierarchical clustering with agglomerative clustering generally works well,
+# but need some tuning of the threshold parameter to make sense.
 def cluster_agglomerative(X, distance_threshold = 0.1):
     model = AgglomerativeClustering(
         n_clusters=None, 
