@@ -22,8 +22,7 @@ from sklearn.cluster import MiniBatchKMeans
 # 3. Prune edges with weigths below
 #
 
-
-class GGG:
+class GenerativeGaussianGraph:
     def __init__(self, eps=0.1, k=20, max_iter=10, sigma=10, init_method="GNN"):
         self.eps = eps  # Pruning threshold
         self.k = k  # Number of component
@@ -94,9 +93,9 @@ class GGG:
     # Initial fit.
     def fit_init(self, X, n_components, method="GMM"):
         if method == "GMM":
-            # It would make sense to experiment with initialisations.
-            # 'tied' covariance make some sense here, since the
-            # GGG model use a shared variance coponent.
+            # It would make sense to experiment with initialisations. 
+            # We use 'tied' covariance here, which is reasonable since the
+            # GGG model use a shared variance coponent. 
             gmm = mixture.GaussianMixture(
                 n_components=n_components, covariance_type="tied", init_params="kmeans"
             )
@@ -104,6 +103,8 @@ class GGG:
             node_centers = gmm.means_
         else:  
             # method=='KMeans':
+            # For large data samples, this should be a lot faster than GNN
+            # initialisation            
             kmeans = MiniBatchKMeans(n_clusters=n_components, random_state=0).fit(X)
             node_centers = kmeans.cluster_centers_
 
@@ -197,7 +198,6 @@ class GGG:
         g1 = g1_matrix(Q, d_edge, L, self.sigma, self.D)
 
         (p0, p1) = p_matrix(pi, g0, g1)
-
         return (p0, p1)
 
 

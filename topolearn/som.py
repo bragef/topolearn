@@ -3,19 +3,19 @@ import networkx as nx
 from random import sample
 
 
-class SOM:
-    def __init__(self, graph,  k=1000, alpha=0.05, batch_size=0.2, conv_rate = 0.001):
+class SelfOrganisingMaps:
+    def __init__(self, graph,  k=1000, alpha=0.05, batch_size=0.2, conv_rate = 0.001, debug=1):
         self.k = k
         self.alpha = alpha
         self.graph = graph
         self.batch_size = batch_size
+        self.debug = debug
         self.conv_rate = conv_rate # Stop when Δer/err < conv_rate
         if not isinstance(graph, nx.Graph):
             raise TypeError("Input graph must be a networkx.Graph. Example: graph=nx.triangular_lattice_graph(10,10)")
 
-
     def fit(self, X):
-        # We want neat integer nodeids we can use to index matrix
+        # We want neat integer nodeids we can use as matrix indices
         graph = nx.convert_node_labels_to_integers(self.graph)
         # Initialise the node positions.
         center = np.mean(X, axis=0)
@@ -54,7 +54,7 @@ class SOM:
             prev_error = error
             # Reconstruction error is just the sum of the shortest distance for each point
             error = np.sum(np.min(distance_matrix, axis=1)**2)
-            if epoch % 100 == 0:
+            if self.debug > 0 and epoch % 100 == 0:
                 print(f"Epoch: {epoch}, error: {error}")
             if error == 0 or abs(prev_error - error) / error < self.conv_rate:
                 print(f"Convergence in {epoch} steps")
@@ -72,5 +72,5 @@ class SOM:
         return self.graph
 
     def transform():
-        print("Lou Reed")
-
+        pass
+    

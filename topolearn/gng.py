@@ -5,9 +5,8 @@ from random import sample
 # Growing Neural Gas algorithm.
 # The algorithm is  described in
 # Fritzke 1995: A Growing Neural Gas Network Learns Topologies,
-
-
-class GNG:
+    
+class GrowingNeuralGas:
     def __init__(
         self,
         alpha=0.01,  # Learning rate
@@ -84,8 +83,6 @@ class GNG:
 
                 steps += 1
                 if steps % self.m == 0 and GG.number_of_nodes() < self.max_nodes:
-                    if self.debug > 0:
-                        print("Epoch ", epoch)
                     # (max of tuples is the same as max of first element)
                     err_max, node_max_err = max(
                         [(d["err"], n) for n, d in GG.nodes(data=True)]
@@ -108,16 +105,15 @@ class GNG:
                     # Shrink the accumulated error of the nodes by a factor beta
                     GG.nodes[node_max_err]["err"] *= self.beta
                     GG.nodes[node_max_err_neigh]["err"] *= self.beta
-                    if self.debug > 0:
-                        print(f"Nodes: {GG.number_of_nodes()}/{self.nodeid}")
 
                 if GG.number_of_nodes() >= self.max_nodes:
-                    print(f"Reached maximum number of nodes.")
+                    print(f"Reached maximum number of nodes (GG.number_of_nodes()).")
                     break
-
             for n1 in GG.nodes():
                 # Shrink the error for all nodes
                 GG.nodes[n1]["err"] *= self.gamma
+            if self.debug > 0:
+                print(f"Epoch {epoch},  {GG.number_of_nodes()} nodes")
 
             self.graph = GG
 

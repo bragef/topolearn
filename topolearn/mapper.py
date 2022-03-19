@@ -1,5 +1,6 @@
 import numpy as np
 import warnings 
+
 import networkx as nx
 
 from sklearn import mixture
@@ -10,13 +11,15 @@ class Mapper():
 
     def __init__(
         self,
-        n_intervals = 10,
+        n_intervals = 10,           
         min_clustersize = 2,
-        debug = 0    
+        debug = 0,
+        cluster_mindistance = 0.1 
     ):  
         self.min_clustersize = min_clustersize
         self.n_intervals = n_intervals  
         self.debug = debug
+        self.cluster_mindistance = cluster_mindistance
 
 
     # Filter function is first dimension of feature matrix unless
@@ -50,16 +53,16 @@ class Mapper():
             bins.append(interval_idx)
         return bins
 
-    # Apply selected clustering algorithm til the covers.
+    # Apply selected clustering algorithm to the covers.
     # Return list(    )
     def find_clusters(self, X, interval_indices):
         cluster_id = 0
         clusters = list()
         for interval_idx in interval_indices:
-            cl = list()
+            clusters_local = list()  
             cover = X[interval_idx]
             #cluster_labels = cluster_gaussian(cover,  max_clusters = 5)
-            cluster_labels  = cluster_agglomerative(cover)
+            cluster_labels  = cluster_agglomerative(cover, distance_threshold=self.cluster_mindistance)
             # Features as index of X matrix 
             points = np.where(interval_idx)[0] 
             # Point set for each 
@@ -69,8 +72,8 @@ class Mapper():
                 # Cluster is tuple(id, pointset)
                 cluster_pointset = set(points[cluster_labels == label])
                 if len(cluster_pointset) >= self.min_clustersize: 
-                    cl.append((cluster_id, cluster_pointset))
-            clusters.append(cl)
+                    clusters_local.append((cluster_id, cluster_pointset))
+            clusters.append(clusters_local)
  
         return clusters
 
@@ -82,10 +85,10 @@ class Mapper():
         for interval in clusters:
             for cluster in interval:
                 graph.add_node(cluster[0])
-                # graph.set_node_attributes(cluster[0],  {"size":len(cluster[1])})
                 if self.debug > 0: 
                     print(f"  cluster {cluster[0]} ({len(cluster[1])})")
                 for prev_cluster in prev_interval:
+                    # Single linkage
                     overlap = len( cluster[1] & prev_cluster[1])
                     if overlap > 0:
                         graph.add_edge(cluster[0], prev_cluster[0])
@@ -98,7 +101,8 @@ class Mapper():
  
 
 # Cluster algorithms.
-# 
+# Gaussian mixture model. 
+# Did not work well, the current version only supports agglomerative clustering
 def cluster_gaussian(X,  max_clusters = 10):
     bic=[]
     best_gmm = None
@@ -126,7 +130,7 @@ def cluster_gaussian(X,  max_clusters = 10):
 def cluster_agglomerative(X, distance_threshold = 0.1):
     model = AgglomerativeClustering(
         n_clusters=None, 
-        distance_threshold=0.1,
+        distance_threshold=distance_threshold,
         compute_full_tree=True,
         linkage="single")
     cluster_labels = model.fit_predict(X)
