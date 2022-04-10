@@ -88,7 +88,7 @@ class Mapper():
                 if self.debug > 0: 
                     print(f"  cluster {cluster[0]} ({len(cluster[1])})")
                 for prev_cluster in prev_interval:
-                    # Single linkage
+                    # Single linkage: Exists point in both clusters
                     overlap = len( cluster[1] & prev_cluster[1])
                     if overlap > 0:
                         graph.add_edge(cluster[0], prev_cluster[0])
@@ -101,8 +101,22 @@ class Mapper():
  
 
 # Cluster algorithms.
+
+# Hierarchical clustering with agglomerative clustering generally works well,
+# but need some tuning of the threshold parameter to make sense. 
+def cluster_agglomerative(X, distance_threshold = 0.1):
+    model = AgglomerativeClustering(
+        n_clusters=None, 
+        distance_threshold=distance_threshold,
+        compute_full_tree=True,
+        linkage="single")
+    cluster_labels = model.fit_predict(X)
+
+    return cluster_labels
+
+
 # Gaussian mixture model. 
-# Did not work well, the current version only supports agglomerative clustering
+# Did not work well at all. The current version only supports agglomerative clustering. 
 def cluster_gaussian(X,  max_clusters = 10):
     bic=[]
     best_gmm = None
@@ -124,15 +138,3 @@ def cluster_gaussian(X,  max_clusters = 10):
     best_fit = best_gmm.fit_predict(X)
 
     return best_fit
-
-# Hierarchical clustering with agglomerative clustering generally works well,
-# but need some tuning of the threshold parameter to make sense.
-def cluster_agglomerative(X, distance_threshold = 0.1):
-    model = AgglomerativeClustering(
-        n_clusters=None, 
-        distance_threshold=distance_threshold,
-        compute_full_tree=True,
-        linkage="single")
-    cluster_labels = model.fit_predict(X)
-
-    return cluster_labels

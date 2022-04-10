@@ -21,6 +21,7 @@ from sklearn.cluster import MiniBatchKMeans
 #   2.3 Repeat EM until convergence or t_max is
 # 3. Prune edges with weigths below
 #
+# 
 
 class GenerativeGaussianGraph:
     def __init__(self, eps=0.1, k=20, max_iter=10, sigma=10, init_method="GNN"):
@@ -121,7 +122,7 @@ class GenerativeGaussianGraph:
         g0 = g0_matrix(self.d_vertex, sigma, self.D)
         g1 = g1_matrix(self.Q, self.d_edge, self.L, sigma, self.D)
 
-        # assert np.sum(pi[0]) + np.sum(pi[1]) == 1, "Probabilties does not sum to 1"
+        # assert np.sum(pi[0]) + np.sum(pi[1]) == 1, "Probabilities does not sum to 1"
         # Pointwise probabilties.
         # (Summing over axis=1 here corresponds to Aupetit Eq. (2))
         (p0, p1) = p_matrix(pi, g0, g1)
@@ -172,6 +173,13 @@ class GenerativeGaussianGraph:
         print(f"Removed {len(remove_edges)} edges")
         g.remove_edges_from(remove_edges)
         return g
+
+    # Return edge probabilities, useful for knee plots
+    def edge_probs(self):
+        edges = self.graph.edges(data=True)
+        edgeprobs = sorted([ attrib['p'] for (n1, n2, attrib) in edges], reverse=True)
+        return edgeprobs
+
 
     # Retrieve mixing probabilities (pi) from graph
     def mprobs(self, graph=None):
@@ -257,7 +265,6 @@ def g0_matrix(d_vertex, sigma, D):
 
 
 # g1: Edge distribution
-# Lots of calculations here!
 # Calculate g1 for all edges.
 # Input dimensions: Q_ij (M x N1), Lvq (N1), L_vec (1 x N1)
 # Output dimension: M x N1
@@ -284,3 +291,5 @@ def p_matrix(pi, g0, g1):
     p0 /= pxj
     p1 /= pxj
     return (p0, p1)
+
+

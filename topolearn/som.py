@@ -49,7 +49,7 @@ class SelfOrganisingMaps:
                     weights[n1, :] = weights[n1, :] + self.alpha * 1 * (
                         point - weights[n1, :]
                     )
-                    # Update distances
+                    # Update distances for affected node
                     distance_matrix[:, n1] = np.linalg.norm(X - weights[n1, :], axis=1)
             prev_error = error
             # Reconstruction error is just the sum of the shortest distance for each point

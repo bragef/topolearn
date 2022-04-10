@@ -1,5 +1,6 @@
 
 
-__all__ = ["mapper", "ggg", "gng","som","rips"]
+__all__ = ["mapper", "ggg", "gng","som","rips","homology","pimage", "plandscape"]
+
 
 
