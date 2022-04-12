@@ -45,7 +45,7 @@ class AlphaComplex:
 
         # Build a simplical complex similar to what we do in rips.py
         simplex_collection = {}
-        # Sort the simplices by (radius,dimension) to get the order the simplices
+        # Sort the simplices by (radius,dimension) to get the filtration order the simplices
         # are added to simplical complex 
         simplices_sorted = sorted(simplex_maxdist.items(), key=lambda x: (x[1], len(x[0])))
 
@@ -58,6 +58,15 @@ class AlphaComplex:
         self.simplical_complex = SimplicalComplex(simplex_collection)
 
         return self.simplical_complex
+
+    def transform(self):
+        # Only transform self here; kthe fit_and_transform_method(9 make more sense.)
+        return self.simplical_complex.birth_death_pairs()
+
+    def fit_and_transform(self, X):
+        self.fit(X)
+        return self.transform()
+        
 
 
 def points_max_distance(X_dist, simplex):
