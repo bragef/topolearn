@@ -77,7 +77,7 @@ class Mapper():
  
         return clusters
 
-    # Given the list of clusters found by the algorithm, find the edges. 
+    # Given the list of clusters find the edges. 
     # Returns nx.Graph object 
     def connect_clusters(self, clusters):
         prev_interval = []

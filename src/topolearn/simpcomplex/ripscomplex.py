@@ -2,6 +2,7 @@ import numpy as np
 import networkx as nx
 from time import time
 from .simpcomplex import SimplicalComplex
+from .distance import calc_distance_matrix, points_max_distance
 
 # Vietoris-Rips filtering
 class RipsComplex:
@@ -40,9 +41,9 @@ class RipsComplex:
         simplex_collection = {}
         # Add the points as 0-simplices
         for i in range(0, len(X_dist)):
-            # Value of a simlex is (index, dimension, filter distance, actual distance)
+            # Value of a simlex is (index, dimension, filter distance)
             simplex = frozenset([i])
-            simplex_collection[simplex] = (i, 0, 0, 0)
+            simplex_collection[simplex] = (i, 0, 0)
             sidx += 1
 
         eps_prev = 0
@@ -67,7 +68,6 @@ class RipsComplex:
                     sidx,
                     1,
                     edge_length,
-                    eps,
                 )
                 sidx += 1
             # Find the higher order simplices
@@ -100,7 +100,6 @@ class RipsComplex:
                                 sidx,
                                 dim,
                                 simplex_max_dist,
-                                eps,
                             )
                             sidx += 1
                 simplices_added_prev_dim = simplices_new
@@ -119,7 +118,7 @@ class RipsComplex:
         return self.simplical_complex
 
     def transform(self):
-        # Only transform self her.
+        # Only transform self here.
         return self.simplical_complex.birth_death_pairs()
 
     def fit_and_transform(self, X):
@@ -129,16 +128,3 @@ class RipsComplex:
 
 
 
-# The Vietoris-Rips complex can be calculated from distances alone,
-# which both simplifies calcualations, and make it possible to apply
-# the filtering on other distances than euclidan.
-# Create a distance matrix from input X feature matrix.
-def calc_distance_matrix(X):
-    dist_matrix = np.zeros((X.shape[0], X.shape[0]))
-    for j, xj in enumerate(X):
-        dist_matrix[j, :] = np.linalg.norm(X - X[j, :], axis=1)
-    return dist_matrix
-
-
-def points_max_distance(X_dist, simplex):
-    return np.max(X_dist[np.ix_(tuple(simplex), tuple(simplex))])

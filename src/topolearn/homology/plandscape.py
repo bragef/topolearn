@@ -21,9 +21,9 @@ class PersistenceLandscape:
         h = (d[points] - b[points])/2   # Half-life         
         npoints = m.shape[0]
 
-        # Calculate a reasonable uppper limit guaranteed to include the full triangular
-        # function. This should be set beforehand to a common value 
-        # if the landscapes are used for statistics!
+        # Calculate a reasonable uppper limit guaranteed to include
+        # the full triangular function. This should be set beforehand
+        # to a common value if the landscapes are used for statistics!
         if max_m is None: 
             max_m = np.max(m) + np.max(h)
         grid_m = np.linspace(0, max_m, resolution)

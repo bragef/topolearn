@@ -56,7 +56,7 @@ def plot_persistance_diagram(pairs, max_dim=None, show_infinite=True):
 
 
 # Two nested balls with uniformily distributed points on the surface.
-# The noise parameter controls the radius
+# The noise parameter controls the radius. ~ 3d version of make_circles 
 def make_shells(n, dim=3, noise=0):
     X = np.random.normal(size=n * dim)
     X = np.reshape(X, (n, dim))
@@ -70,3 +70,4 @@ def make_shells(n, dim=3, noise=0):
     else:
         X *= np.reshape(y, (n, 1))
     return (y, X)
+

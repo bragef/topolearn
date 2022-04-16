@@ -37,12 +37,12 @@ class SelfOrganisingMaps:
         error = prev_error = 0
         batch_count = min(round(X.shape[0] * self.batch_size), X.shape[0])
         for epoch in range(0, self.k):
-            # Draw input vectors
+            # Sample input vectors
             input_batch = sample(range(0, X.shape[0]), batch_count)
             for i in input_batch:
                 point = X[i, :]
                 node_closest = np.argmin(distance_matrix[i, :])
-                # Todo: Replace with neighborhood-function
+                # Todo: Replace with a configurable neighborhood-function
                 # We here just use a neighborhood function of 1 for neighbor nodes, 0 else. 
                 neighbors = list(graph.neighbors(node_closest))
                 for n1  in [node_closest] + neighbors:

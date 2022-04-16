@@ -269,16 +269,16 @@ def g0_matrix(d_vertex, sigma, D):
 # Input dimensions: Q_ij (M x N1), Lvq (N1), L_vec (1 x N1)
 # Output dimension: M x N1
 def g1_matrix(Q, d_edge, l_edge, sigma, D):
-    Q_ji = np.transpose(Q)  # Edgewise operations, want rows as edges
+    Q_ji = Q.T  # Edgewise operations, want rows as edges
     # Eq.(1) Aupetit 2005
     res = np.power(2 * np.pi * sigma**2, -(D - 1) / 2)
-    res *= np.exp(-np.transpose(d_edge) ** 2 / (2 * sigma**2))
+    res *= np.exp(- d_edge.T ** 2 / (2 * sigma**2))
     res /= 2 * l_edge
     res *= erf(Q_ji / (sigma * np.sqrt(2))) - erf(
         (Q_ji - l_edge) / (sigma * np.sqrt(2))
     )
     # Return matrix with data as rows, edges as columns
-    return np.transpose(res)
+    return res.T
 
 
 # Component probabilities

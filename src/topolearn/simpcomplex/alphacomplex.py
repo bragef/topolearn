@@ -3,7 +3,8 @@ import networkx as nx
 from scipy.spatial import Delaunay
 from itertools import combinations
 from .simpcomplex import SimplicalComplex
-from .rips import calc_distance_matrix
+from .distance import calc_distance_matrix, points_max_distance
+
 
 # AlphaComplex filtering
 class AlphaComplex:
@@ -52,7 +53,7 @@ class AlphaComplex:
         for sidx, (simplex, eps) in enumerate(simplices_sorted):
             if max_radius is not None and eps > max_radius: 
                 continue
-            simplex_collection[simplex] = (sidx, len(simplex) - 1 , eps, eps)
+            simplex_collection[simplex] = (sidx, len(simplex) - 1 , eps)
         
         self.simplex_maxdist = simplex_maxdist
         self.simplical_complex = SimplicalComplex(simplex_collection)
@@ -67,7 +68,3 @@ class AlphaComplex:
         self.fit(X)
         return self.transform()
         
-
-
-def points_max_distance(X_dist, simplex):
-    return np.max(X_dist[np.ix_(tuple(simplex), tuple(simplex))])

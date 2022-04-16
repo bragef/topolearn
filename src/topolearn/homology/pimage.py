@@ -43,7 +43,7 @@ class PersistenceImage:
         b_grid = np.linspace(0, b_max, num=resolution)
         delta_b = b_max / resolution
         # Allocate images for each dimension
-        images = np.zeros(( np.max(dim), resolution, resolution ))
+        images = np.zeros(( np.max(dim)+1, resolution, resolution ))
 
         # We only need the pairs with non-zero and finite persistance
         valid = np.where(np.isfinite(p) & (p > 0))
