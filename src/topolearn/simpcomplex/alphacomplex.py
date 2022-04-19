@@ -3,22 +3,38 @@ import networkx as nx
 from scipy.spatial import Delaunay
 from itertools import combinations
 from .simpcomplex import SimplicalComplex
-from .distance import calc_distance_matrix, points_max_distance
+from .distance import distance_matrix, points_max_distance
 
 
 # AlphaComplex filtering
 class AlphaComplex:
 
-    def __init__(self, debug=1):
-        self.debug = debug
+    def __init__(self, verbose=1, max_radius = None):
+        self.verbose = verbose
+        self.max_radius = max_radius
 
-    def fit(self, X, max_radius=None, max_simplices=None, num_steps=10):
+    def fit(self, X, X_dist = None):
+        """_summary_
+
+        Parameters
+        ----------
+        X : matrix
+            Feature matrix
+        X_dist : matrix, optional
+            Feature distance matrix. If not specified, euclidian distances will be used.
+
+        Returns
+        -------
+        SimplicalComplex
+            Fitted simplical complex
+        """        
         DG = Delaunay(X)
 
         # Distance matrix between points used for ball radius. We use euclidian 
         # distance here, for a weighted alpha complex, this should be replaced
         # by weighted values.
-        X_dist = calc_distance_matrix(X)
+        if X_dist is None:
+            X_dist = distance_matrix(X)
 
         # Number of points in delaney calculated simplices (dim+1)
         rdim = DG.simplices.shape[1]  #
@@ -44,14 +60,14 @@ class AlphaComplex:
                             X_dist, subsimplex_set
                         )
 
-        # Build a simplical complex similar to what we do in rips.py
+        # Build a simplical complex similar to what we do in ripssimplex.py
         simplex_collection = {}
         # Sort the simplices by (radius,dimension) to get the filtration order the simplices
         # are added to simplical complex 
         simplices_sorted = sorted(simplex_maxdist.items(), key=lambda x: (x[1], len(x[0])))
 
         for sidx, (simplex, eps) in enumerate(simplices_sorted):
-            if max_radius is not None and eps > max_radius: 
+            if self.max_radius is not None and eps > self.max_radius: 
                 continue
             simplex_collection[simplex] = (sidx, len(simplex) - 1 , eps)
         
@@ -61,7 +77,7 @@ class AlphaComplex:
         return self.simplical_complex
 
     def transform(self):
-        # Only transform self here; kthe fit_and_transform_method(9 make more sense.)
+        # Only transform self here; the fit_and_transform_method make more sense.
         return self.simplical_complex.birth_death_pairs()
 
     def fit_and_transform(self, X):

@@ -6,6 +6,8 @@ from random import sample
 # The algorithm is  described in
 # Fritzke 1995: A Growing Neural Gas Network Learns Topologies,
     
+
+    
 class GrowingNeuralGas:
     def __init__(
         self,
@@ -120,6 +122,5 @@ class GrowingNeuralGas:
         return self.graph
 
     def transform(X):
-        print("transforming")
-
-        # Random start nodes
+        # todo 
+        pass 

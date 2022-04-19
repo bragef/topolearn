@@ -5,6 +5,7 @@ from scipy.special import erf
 from scipy.spatial import Delaunay
 from sklearn import mixture
 from sklearn.cluster import MiniBatchKMeans
+import matplotlib.pyplot as plt
 
 
 #  Algorithm from Aupetit 2005:
@@ -21,10 +22,69 @@ from sklearn.cluster import MiniBatchKMeans
 #   2.3 Repeat EM until convergence or t_max is
 # 3. Prune edges with weigths below
 #
-# 
+#
+
 
 class GenerativeGaussianGraph:
-    def __init__(self, eps=0.1, k=20, max_iter=10, sigma=10, init_method="GNN"):
+    """Generative Gaussian Graph
+
+    Parameters
+    ----------
+    k : int, default = 20
+        Number of nodes
+
+    init_method : {'GNN', 'KMeans'}, default='GNN'
+        Initialisation method for the nodes. 'GNN' for Gaussian Mixutre model or
+        'KMeans'. KMeans is faster, and preferrable if _k_ is set to a high value.
+
+    max_iter : int, optional
+        Maximum number of iteration
+
+    Attributes
+    ----------
+    graph: networkx.graph
+        The individual probability weights (mixing probabilities) are accessible
+        as data attribute `p` on the edges and nodes, the input data points are
+        accessible as the `w` attribute on the nodes.
+
+        The learned graph is the fully connected Dealauney graph. To get a pruned version
+        of the graph, use the `pruned_graph(eps=eps)` method.
+
+    sigma: float
+        Standard deviation of the Gaussian model learned by the algorithm
+
+    Examples
+    --------
+    >>> from topolearn.graph import ggg
+    >>> from topolearn.util import plot_graph_with_data
+    >>> from sklearn.datasets import make_moons, make_circles
+    >>> import numpy as np
+
+    >>> X, _ = make_moons(noise=0.05, n_samples=10000)
+    >>> learner = ggg.GenerativeGaussianGraph(k=20, sigma=1, max_iter=100, init_method="KMeans")
+    >>> graph = learner.fit(X)
+    >>> # Plot the full graph fitted by gnn or kmeans
+    >>> plot_graph_with_data(learner.graph, X)
+    >>> # Plot number of eges vs log probabilties to identify intersting scales
+    >>> learner.kneeplot()
+    >>> # Get a pruned graph and plot
+    >>> plot_graph_with_data( learner.pruned_graph(np.exp(-4)), X)
+
+
+    Notes
+    -----
+    Implements the Generative Gaussian Graph algorithm described in 
+
+    Aupetit, Michaël. 2005: Learning Topology with the Generative Gaussian Graph and 
+    the EM Algorithm. In Advances in Neural Information Processing Systems. Vol. 18. MIT Press.
+
+
+
+    """
+
+    def __init__(
+        self, eps=0.1, k=20, max_iter=10, sigma=10, init_method="GNN", conv_rate=0.001
+    ):
         self.eps = eps  # Pruning threshold
         self.k = k  # Number of component
         self.D = None  # Data dimension
@@ -35,11 +95,20 @@ class GenerativeGaussianGraph:
         self.graph = None  # Graph representation
         self.pi = None
         # Config.
-        self.conv_rate = 0.001  # Stop when Δσ/σ < conv_rate
-
+        self.conv_rate = conv_rate  # Stop when Δσ/σ < conv_rate
 
     def fit(self, X, y=None):
+        """Fit at Generative Gaussian Graph model
 
+        Parameters
+        ----------
+        X : (array, shape = [n_samples, n_features])
+
+        Returns
+        -------
+        networkx.graph
+            Graph with the fitted mixture probabilties
+        """
         self.D = D = X.shape[1]
 
         # Init nodes with GMM or KMeans
@@ -94,18 +163,18 @@ class GenerativeGaussianGraph:
     # Initial fit.
     def fit_init(self, X, n_components, method="GMM"):
         if method == "GMM":
-            # It would make sense to experiment with initialisations. 
+            # It would make sense to experiment with initialisations.
             # We use 'tied' covariance here, which is reasonable since the
-            # GGG model use a shared variance coponent. 
+            # GGG model use a shared variance coponent.
             gmm = mixture.GaussianMixture(
                 n_components=n_components, covariance_type="tied", init_params="kmeans"
             )
             gmm.fit(X)
             node_centers = gmm.means_
-        else:  
+        else:
             # method=='KMeans':
             # For large data samples, this should be a lot faster than GNN
-            # initialisation            
+            # initialisation
             kmeans = MiniBatchKMeans(n_clusters=n_components, random_state=0).fit(X)
             node_centers = kmeans.cluster_centers_
 
@@ -168,6 +237,20 @@ class GenerativeGaussianGraph:
     # Note that the pruned version keep the original probability weights, not
     # renormalised to the pruned tree.
     def pruned_graph(self, eps=1):
+        """Return an edge-pruned version of the graph.
+
+        Return a copy of the fitted graph where all edges with probability weight <eps are pruned
+
+        Parameters
+        ----------
+        eps : float
+            Minimum edge probabiltiy to keep
+
+        Returns
+        -------
+        networkx.graph
+            Pruned graph
+        """
         g = self.graph.copy()
         remove_edges = [(n1, n2) for n1, n2, p in g.edges(data="p") if p < eps]
         print(f"Removed {len(remove_edges)} edges")
@@ -177,9 +260,8 @@ class GenerativeGaussianGraph:
     # Return edge probabilities, useful for knee plots
     def edge_probs(self):
         edges = self.graph.edges(data=True)
-        edgeprobs = sorted([ attrib['p'] for (n1, n2, attrib) in edges], reverse=True)
+        edgeprobs = sorted([attrib["p"] for (n1, n2, attrib) in edges], reverse=True)
         return edgeprobs
-
 
     # Retrieve mixing probabilities (pi) from graph
     def mprobs(self, graph=None):
@@ -193,9 +275,32 @@ class GenerativeGaussianGraph:
         pi1 /= pic
         return (pi0, pi1)
 
+    def kneeplot(self):
+        edge_probs = self.edge_probs()
+        fig = plt.figure()
+        plt.plot(np.log(edge_probs), range(0, len(edge_probs)))
+        plt.xlabel("log(p)")
+        plt.ylabel("Number of edges")
+        
+
     # Transform data
     # Return a tuple of of (p0, p1),
     def transform(self, X, graph=None):
+        """Calculate mixture probabilties for new features
+
+        Parameters
+        ----------
+        X : (array, shape = [n_samples, n_features])
+            Input features
+        graph : networkx.graph, optional, default=self.graph
+            A fitted graph with mixture probabilties. This argument can be used to
+            get the mixture probabilties of a pruned graph.
+        
+        Returns
+        -------
+        (array shape=[n_samples, n_vertices], array shape=[n_samples, n_edges])
+            Mixture probabilities for X using the (optionally pruned) fitted graph.
+        """
         if graph is None:
             graph = self.graph
         (Q, d_edge, d_vertex, L) = calc_distances(X, graph)
@@ -272,7 +377,7 @@ def g1_matrix(Q, d_edge, l_edge, sigma, D):
     Q_ji = Q.T  # Edgewise operations, want rows as edges
     # Eq.(1) Aupetit 2005
     res = np.power(2 * np.pi * sigma**2, -(D - 1) / 2)
-    res *= np.exp(- d_edge.T ** 2 / (2 * sigma**2))
+    res *= np.exp(-d_edge.T**2 / (2 * sigma**2))
     res /= 2 * l_edge
     res *= erf(Q_ji / (sigma * np.sqrt(2))) - erf(
         (Q_ji - l_edge) / (sigma * np.sqrt(2))
@@ -291,5 +396,3 @@ def p_matrix(pi, g0, g1):
     p0 /= pxj
     p1 /= pxj
     return (p0, p1)
-
-

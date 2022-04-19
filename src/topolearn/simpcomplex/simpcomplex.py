@@ -1,8 +1,10 @@
 import networkx as nx
 import numpy as np
+import matplotlib.pyplot as pl
+import matplotlib.colors as colors
 from scipy import sparse
 from itertools import combinations
-from ..homology import reduce_matrix_set, find_birth_death_pairs_set
+from ..persistence import reduce_matrix_set, find_birth_death_pairs_set
 
 # Container class for the simplical complexes
 # Init with a simplex_collection dictionary:
@@ -72,18 +74,23 @@ class SimplicalComplex:
             if dim >= 1:
                 for boundary in combinations(simplex_set, dim):
                     # Get the index number of the faces of the simplex
-                    face = frozenset(boundary)
-                    boundary_cols[idx] |= { self.simplex_collection[face][0] }
+                    try:
+                        face = frozenset(boundary)
+                        boundary_cols[idx] |= { self.simplex_collection[face][0] }
+                    except:
+                        print(f"Error: face {simplex_set} has missing boundary ({face})!")
+                        return None
+
         return boundary_cols
     
 
     # Find the birth death-pairs and add dimension and filtration value to
     # output
-    def birth_death_pairs(self, dim=None):
+    def birth_death_pairs(self, dim=None, verbose=1):
 
         simplices = self.as_list()  # Simplices indexed by number
         boundaries = self.boundary_sets()
-        reduced_matrix = reduce_matrix_set(boundaries)
+        reduced_matrix = reduce_matrix_set(boundaries, verbose=verbose)
         pairs = find_birth_death_pairs_set(reduced_matrix)
         pairs_out = list()
         for (b, d) in pairs:
@@ -104,16 +111,45 @@ class SimplicalComplex:
 
 
 
+class Persistence:
 
-
-
-
-
-
-class HomologyPairs:
     def __init__(self, pairs):
         self.pairs = pairs
 
+    def plot(self,  max_dim=None, show_infinite=True, size=20, size_diagonal=0.1):
+        # Max dimension never die, remove from plot.
+        pairs = np.array(self.pairs)
+        if max_dim is None:
+            max_dim = np.nanmax(pairs[:, 2])
+        incl = np.where(pairs[:, 2] <= max_dim)
+        [d] = np.array(pairs[incl, 4], dtype=float)
+        [b] = np.array(pairs[incl, 3], dtype=float)
+        [dim] = pairs[incl, 2]
+        # Plot the birth-death pairs as circles
+        dimcolours = ["red", "green", "blue", "purple"]
+        pl.figure()
+        # Ephemeral cycles which disappear within the same filtration values
+        # Plot these as small dots, the non-ephemeral as larger circles
+        is_noise = (b - d) == 0
+        s = np.ones(len(dim), dtype=float)  # Marker sizes
+        s[is_noise] = size_diagonal
+        s[is_noise == False] = size
+        pl.scatter(
+            b, d, c=dim, cmap=colors.ListedColormap(dimcolours), alpha=0.3, marker="o", s=s
+        )
+        # And the infinite pairs as triangles
+        if show_infinite:
+            undead = np.where(np.isnan(d))
+            maxd = np.nanmax(d)
+            pl.scatter(
+                b[undead],
+                maxd * np.ones_like(undead),
+                c=dim[undead],
+                cmap=colors.ListedColormap(dimcolours),
+                alpha=0.5,
+                marker="^",
+            )
+    
     # Return a dictionary of (edge) => (persistance)
     # Only handles 0 and 1 homologies yet
     def as_dict(self, dim):
@@ -122,7 +158,6 @@ class HomologyPairs:
             if p[1] is not None  and p[2] == dim:
                 out[ frozenset({p[0], p[1]})] = p[4]
         return out
-
 
 
 

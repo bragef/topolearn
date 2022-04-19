@@ -2,11 +2,20 @@ import numpy as np
 import networkx as nx
 from time import time
 from .simpcomplex import SimplicalComplex
-from .distance import calc_distance_matrix, points_max_distance
+from .distance import distance_matrix, points_max_distance
 
 # Vietoris-Rips filtering
+
+# The Vietoris-Rips complex can be calculated from distances alone,
+# which both simplifies calcualations, and make it possible to apply
+# the filtering on other distances than euclidan.
+#
+
 class RipsComplex:
+
+
     def __init__(
+        
         self, max_dim=2, max_radius=None, max_simplices=None, num_steps=500, verbose=1, input_distance_matrix =True
     ):
         self.verbose = verbose
@@ -19,15 +28,15 @@ class RipsComplex:
         self.input_distance_matrix = input_distance_matrix
 
     # Fit from distance matrix
-    # (Will not work with NaNs, prefiltered values should be set to -1)
+    # (Will not work with NaNs, prefiltered values should be set to inf)
     def fit(self, X_dist):
 
         if self.input_distance_matrix == False:
-            X_dist = calc_distance_matrix(X_dist) 
+            X_dist = distance_matrix(X_dist) 
 
         X_dist_lower = np.tril(X_dist)
         if self.max_radius is None:
-            max_radius = np.max(X_dist)
+            max_radius = np.nanmax(X_dist)
         else:
             max_radius = self.max_radius
         # Linear breaks for now. Try area/volumebased for finer resolution?
@@ -77,9 +86,9 @@ class RipsComplex:
                 for simplex in simplices_added_prev_dim:
                     # For current distance, check if any new nodes have reached
                     # epsilon-distance, and add these to d+1 dimensional simplices
-                    point_dist = np.max(X_dist[:, tuple(simplex)], axis=1)
+                    point_dist = np.nanmax(X_dist[:, tuple(simplex)], axis=1)
                     # within = np.where((point_dist > eps_prev) & (point_dist <= eps))
-                    within = np.where(point_dist <= eps)
+                    within = np.where(( point_dist > 0) &  (point_dist <= eps))
                     # Ignore points already in simplex
                     point_set = frozenset(within[0]) - simplex
                     if len(point_set) == 0:
@@ -110,9 +119,11 @@ class RipsComplex:
                 self.max_simplices is not None
                 and len(simplex_collection) > self.max_simplices
             ):
-                print(f"Reached max number of simplices ({self.max_simplices})")
+                if self.verbose > 0:
+                    print(f"Reached max number of simplices ({self.max_simplices}) at eps={eps}")
                 break
-        print(f"Rips filtration: {len(simplex_collection)} simplices, {round(time() - t_start, 2)} sec.")
+        if self.verbose > 0:
+            print(f"Rips filtration: {len(simplex_collection)} simplices, {round(time() - t_start, 2)} sec.")
         
         self.simplical_complex = SimplicalComplex(simplex_collection)
         return self.simplical_complex

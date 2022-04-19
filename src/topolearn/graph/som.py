@@ -72,5 +72,6 @@ class SelfOrganisingMaps:
         return self.graph
 
     def transform():
+        # todo
         pass
     

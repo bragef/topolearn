@@ -11,7 +11,7 @@ from time import time
 # S1 <- S1 ^ S2
 # low(S1) = max(S1)
 #
-def reduce_matrix_set(boundary_matrix):
+def reduce_matrix_set(boundary_matrix, verbose=1):
     # Represent columns as a set of non-zero simplices
     # r_array =  [ set(np.where(col)[0]) for col in boundary_matrix.T ]
     r_array = boundary_matrix
@@ -34,7 +34,8 @@ def reduce_matrix_set(boundary_matrix):
             i = cols[0]
             r_array[j] ^= r_array[i]
             low[j] = max(r_array[j]) if len(r_array[j]) > 0 else -1
-    print(f"Reduced matrix in {steps} steps using {round(time() - t_start, 2)} sec.")
+    if verbose > 0:
+        print(f"Reduced matrix in {steps} steps using {round(time() - t_start, 2)} sec.")
     return r_array
 
 

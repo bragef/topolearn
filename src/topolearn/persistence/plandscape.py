@@ -8,6 +8,8 @@ class PersistenceLandscape:
 
     # For statistics to make sense, max_m need to be set beforehand.
     def fit(self, pairs, dim = 1, resolution = 100, max_m = None):
+
+
         # TODO: Move the setup to SimplicalComplex
         pairs = np.array(pairs)
         sdim = np.array(pairs[:, 2], dtype=int) 
@@ -39,6 +41,10 @@ class PersistenceLandscape:
         self.landscape = landscape
 
         return self.landscape
+
+
+    # def plot():
+
 
 
         

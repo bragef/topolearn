@@ -1,5 +1,5 @@
-from .simpcomplex import SimplicalComplex, HomologyPairs
-from .rips import RipsComplex, calc_distance_matrix, points_max_distance_edge
+
+from .simpcomplex import distance_matrix, points_max_distance_edge
 import numpy as np
 
 
@@ -13,7 +13,7 @@ class TopologicalLoss:
 
         # Homology calculations
         simplices = self.filtration.fit(A)
-        bdpairs = simplices.birth_death_pairs()
+        bdpairs = simplices.birth_death_pairs(verbose=0)
 
         # Save the edges in numpy-index-friendly coordinates
         edges_x = []
@@ -42,18 +42,17 @@ class TopologicalLoss:
 
         assert len(X) == len(Z)
 
-        Ax = calc_distance_matrix(X)
-        Az = calc_distance_matrix(Z)
+        Ax = distance_matrix(X)
+        Az = distance_matrix(Z)
 
         edges_z = self.find_critical_edges(Az)
         edges_x = self.find_critical_edges(Ax)
 
-        Lxz = np.linalg.norm(Ax[edges_x] - Az[edges_x])
-        Lzx = np.linalg.norm(Az[edges_z] - Ax[edges_z])
+        Lxz = np.linalg.norm(Ax[edges_x] - Az[edges_x])**2
+        Lzx = np.linalg.norm(Az[edges_z] - Ax[edges_z])**2
         L = 1 / 2 * (Lxz + Lzx)
 
         # rho = Ax[edges_x] - Az[edges_x]
-
         return L
 
 
