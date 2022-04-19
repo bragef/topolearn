@@ -13,16 +13,17 @@ importlib.reload(ph)
 importlib.reload(simpcomplex)
 
 from sklearn.datasets import make_moons, make_circles
-X1, y1 = make_circles(noise=0.15,  n_samples=100, random_state=50)
-X2, y2 = make_circles(noise=0.15,  n_samples=50, random_state=50)
+X1, y1 = make_circles(noise=0.2,  n_samples=100, random_state=50)
+X2, y2 = make_circles(noise=0.2,  n_samples=50, random_state=50)
 X2 = X2 * 0.5
 X2[:, 0] += 2
 X = np.array(np.concatenate((X1, X2), axis=0))
 
-learner = simpcomplex.RipsComplex(max_simplices = 100000, max_dim = 2)
-X_dist = simpcomplex.calc_distance_matrix(X)
+learner = simpcomplex.RipsComplex(max_simplices=50000, max_dim = 2)
+X_dist = simpcomplex.distance_matrix(X)
 
 simplices = learner.fit(X_dist)
+
 util.plot_graph_with_data(simplices.graph(X), X)
 
 pairs = simplices.birth_death_pairs()
@@ -49,7 +50,7 @@ pl.imshow(pimg.images[1], origin='lower', extent= pimg.extent,  cmap='Blues')
 # To the same with the alpha complex. Discovers the same topology in 
 # a fraction of the time.
 
-learner = ph.AlphaComplex()
+learner = simpcomplex.AlphaComplex()
 
 simplices = learner.fit(X)
 util.plot_graph_with_data(simplices.graph(X), X)
@@ -59,8 +60,8 @@ pairs = simplices.birth_death_pairs()
 util.plot_persistance_diagram(pairs, max_dim=1)
 graph = simplices.graph(X)
 
-plant = plandscape.PersistenceLandscape()
-mat = plant.fit(pairs, resolution=400)
+pland = ph.PersistenceLandscape()
+mat = pland.fit(pairs, resolution=400)
 pl.figure()
 for row in mat:
     pl.plot(plant.grid_m, row)
@@ -80,11 +81,12 @@ pl.imshow(pimg.images[1], origin='lower', extent= pimg.extent,  cmap='Blues')
 # todo- test with the
 
 y, X = util.make_shells(400, 3, noise=0)
-X_dist = rips.calc_distance_matrix(X)
+X_dist = simpcomplex.distance_matrix(X)
+
 # learner = rips.RipsComplex( max_simplices=10000)
 
 
-learner = alphacomplex.AlphaComplex()
+learner = simpcomplex.AlphaComplex()
 
 simplices = learner.fit(X)
 util.plot_graph_with_data(simplices.graph(X), X, axis=True)
@@ -96,13 +98,13 @@ bmatrix = simplices.boundary_matrix()
 
 util.plot_persistance_diagram(bdpairs)
 
-plant = plandscape.PersistenceLandscape()
-mat = plant.fit(bdpairs, resolution=400)
+pland = ph.PersistenceLandscape()
+mat = pland.fit(bdpairs, resolution=400)
 pl.figure()
 for row in mat:
-    pl.plot(plant.grid_m, row)
+    pl.plot(pland.grid_m, row)
 
-pimg = pimage.PersistenceImage()
+pimg = ph.PersistenceImage()
 pimg.fit(pairs, sigma=0.1, resolution=50)
 
 pl.figure()

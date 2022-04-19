@@ -95,34 +95,20 @@ util.plot_persistance_diagram(bdpairs)
 import matplotlib.pyplot as pl
 import numpy as np
 import networkx as nx
-from topolearn import rips 
 from topolearn import simpcomplex
-from topolearn import alphacomplex
 from topolearn import homology
 from topolearn import util
 import importlib
-importlib.reload(rips)
 importlib.reload(simpcomplex)
 importlib.reload(homology)
 importlib.reload(util)
 
 
-#X = util.make_shells(500, 3, noise=0.001)
-
-#learner = rips.RipsComplex()
-#X_dist = rips.calc_distance_matrix(X)
-
-#simplices = learner.fit(X_dist, max_radius=1, max_dim = 3, num_steps=50)
-#graph = simplices.graph(X)
-
-#util.plot_graph_with_data(graph, X)
-
-# 
-y, X = util.make_shells(50, 2, noise=0.01)
+y, X = util.make_shells(500, 3, noise=0.01)
 
 # learner = alphacomplex.AlphaComplex()
-learner = rips.RipsComplex(max_dim=2, verbose=1)
-X_dist = rips.calc_distance_matrix(X)
+learner = simpcomplex.RipsComplex(max_dim=2, verbose=1, max_simplices=50000)
+X_dist = simpcomplex.distance_matrix(X)
 
 simplices = learner.fit(X_dist)
 graph = simplices.graph(X)

@@ -17,30 +17,22 @@ importlib.reload(util)
 
 
 from sklearn.datasets import make_moons, make_circles
-X1, y1 = make_circles(noise=0.05,  n_samples=100, random_state=50)
-X2, y2 = make_circles(noise=0.05,  n_samples=50, random_state=50)
+X1, y1 = make_circles(noise=0.05,  n_samples=200, random_state=50)
+X2, y2 = make_circles(noise=0.05,  n_samples=100, random_state=50)
 X2 = X2 * 0.5
 X2[:, 0] += 2
 X = np.array(np.concatenate((X1, X2), axis=0))
 
-learner = simpcomplex.RipsComplex(max_simplices = 100000, max_dim = 2, num_steps=1000)
-X_dist = simpcomplex.calc_distance_matrix(X)
+learner = simpcomplex.RipsComplex(max_simplices = 50000, max_dim = 4, num_steps=1000)
+X_dist = simpcomplex.distance_matrix(X)
 
-# test = learner.fit_distances(X_dist, max_radius = , max_dim = 3)
-#test = learner.fit_distances(X_dist, max_radius = 0.25, max_dim = 2, num_steps=50)
 simplices = learner.fit(X_dist)
 graph = simplices.graph(X)
 
 bdpairs = simplices.birth_death_pairs()
 
-
-# np.save("dat/bd-example2.dat", bdpairs)
-
-# graph = learner.fit(X)
-
 util.plot_graph_with_data(graph, X)
 util.plot_persistance_diagram(bdpairs, max_dim=1)
-
 
 
 # bmatrix = simplices.boundary_matrix()
@@ -57,11 +49,12 @@ util.plot_persistance_diagram(bdpairs, max_dim=1)
 
 
 
-pyt# %%
+# %%
 import matplotlib.pyplot as pl
 from sklearn.datasets import make_moons, make_circles
 import numpy as np
 import networkx as nx
+from topolearn import simpcomplex
 from topolearn import homology as ph
 from topolearn import util
 import importlib
@@ -75,7 +68,7 @@ X2 = X2 * 0.5
 X2[:, 0] += 2
 X = np.array(np.concatenate((X1, X2), axis=0))
 
-learner = ph.AlphaComplex()
+learner = simpcomplex.AlphaComplex()
 simplices = learner.fit(X)
 graph = simplices.graph(X)
 
@@ -91,17 +84,13 @@ import matplotlib.pyplot as pl
 from sklearn.datasets import make_moons, make_circles
 import numpy as np
 import networkx as nx
-from topolearn import alphacomplex 
 from topolearn import simpcomplex
-from topolearn import rips 
 from topolearn import homology
 from topolearn import util
 import importlib
-importlib.reload(alphacomplex)
 importlib.reload(homology)
 importlib.reload(simpcomplex)
 importlib.reload(util)
-importlib.reload(rips)
 
 
 # X,y = make_circles(noise=0.0001,  n_samples=4, random_state=50)
@@ -109,14 +98,14 @@ importlib.reload(rips)
 X = np.array([[0,0],[1,0],[0,1],[1,1]])
 
 
-l1 = alphacomplex.AlphaComplex()
+l1 = simpcomplex.AlphaComplex()
 s1 = l1.fit(X)
 graph = s1.graph(X)
 
 
 bdpairs = s1.birth_death_pairs()
 bmatrix = s1.boundary_matrix()
-rmatrix = simpcomplex.reduce_matrix(bmatrix)
+rmatrix = homology.reduce_matrix(bmatrix)
 
 util.plot_graph_with_data(graph, X)
 util.plot_persistance_diagram(bdpairs)
@@ -129,4 +118,39 @@ bd2 = s2.birth_death_pairs()
 
 
 
+
+# %%
+# Rips 
+import matplotlib.pyplot as pl
+import numpy as np
+import networkx as nx
+
+from topolearn import graph
+from topolearn import simpcomplex
+from topolearn import homology as ph
+from topolearn import util
+import importlib
+importlib.reload(graph)
+importlib.reload(ph)
+importlib.reload(simpcomplex)
+importlib.reload(util)
+
+
+from sklearn.datasets import make_moons, make_circles
+X1, y1 = make_circles(noise=0.05,  n_samples=100, random_state=50)
+X2, y2 = make_circles(noise=0.05,  n_samples=50, random_state=50)
+X2 = X2 * 0.5
+X2[:, 0] += 2
+X = np.array(np.concatenate((X1, X2), axis=0))
+
+learner = simpcomplex.RipsComplex(max_simplices = 100000, max_dim = 3, num_steps=1000)
+X_dist = simpcomplex.distance_matrix(X)
+
+simplices = learner.fit(X_dist)
+graph = simplices.graph(X)
+
+bdpairs = simplices.birth_death_pairs()
+
+util.plot_graph_with_data(graph, X)
+util.plot_persistance_diagram(bdpairs, max_dim=1)
 # %%

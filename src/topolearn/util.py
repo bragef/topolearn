@@ -19,8 +19,7 @@ def plot_graph_with_data(graph, X, axis=False, alpha=0.25):
         ax.tick_params(left=True, bottom=True, labelleft=True, labelbottom=True)
 
 
-#
-def plot_persistance_diagram(pairs, max_dim=None, show_infinite=True):
+def plot_persistance_diagram(pairs, max_dim=None, show_infinite=True, size=20, size_diagonal=0.1):
     # Max dimension never die, remove from plot.
     pairs = np.array(pairs)
     if max_dim is None:
@@ -36,10 +35,10 @@ def plot_persistance_diagram(pairs, max_dim=None, show_infinite=True):
     # Plot these as small dots, the non-ephemeral as larger circles
     is_noise = (b - d) == 0
     s = np.ones(len(dim), dtype=float)  # Marker sizes
-    s[is_noise] = 0.1
-    s[is_noise == False] = 20
+    s[is_noise] = size_diagonal
+    s[is_noise == False] = size
     pl.scatter(
-        b, d, c=dim, cmap=colors.ListedColormap(dimcolours), alpha=0.5, marker="o", s=s
+        b, d, c=dim, cmap=colors.ListedColormap(dimcolours), alpha=0.3, marker="o", s=s
     )
     # And the infinite pairs as triangles
     if show_infinite:
@@ -53,6 +52,7 @@ def plot_persistance_diagram(pairs, max_dim=None, show_infinite=True):
             alpha=0.5,
             marker="^",
         )
+    
 
 
 # Two nested balls with uniformily distributed points on the surface.
