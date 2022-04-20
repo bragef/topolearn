@@ -4,11 +4,51 @@ from random import sample
 
 # Growing Neural Gas algorithm.
 # The algorithm is  described in
-# Fritzke 1995: A Growing Neural Gas Network Learns Topologies,
-    
+# Fritzke 1995: A Growing Neural Gas Network Learns Topologies
+# (Very basic implementation and rather slow. In hindsight I should have used KDTrees.)
 
-    
 class GrowingNeuralGas:
+    """Growing Neural Gas graph learner
+
+    Parameters
+    ----------
+    alpha : float
+        Learning rate, default 0.01
+    beta: float
+        Local error decay, default 0.75 
+    gamma: float
+        Global error decay, default 0.995
+    max_age: int
+        Max age for nodes
+    max_nodes : int, optional
+        Maximum number of nodes to learn, 200
+    max_iter: int
+        Maximum number of iteration
+    conv_rate: float
+        Convergence criterion. Stop if |Δerr/err| < conv_rate
+    k: int
+        Number of epochs 
+
+    Examples
+    --------
+    >>> # Growing Neural Gas example code
+    >>> from topolearn.graph import gng
+    >>> from topolearn.util import plot_graph_with_data
+    >>> from sklearn.datasets import make_moons
+    >>> from sklearn.metrics import mean_squared_error
+    >>> X, _ = make_moons(noise=0.05, n_samples=2000)
+    >>> learner = gng.GrowingNeuralGas(max_nodes=200)
+    >>> graph = learner.fit(X)
+    >>> plot_graph_with_data(graph, X)
+    >>> mse = mean_squared_error(X, learner.transform(X))
+
+    Notes
+    -----
+    Algorithm described in:
+    Fritzke, Bernd. 1994. ‘A Growing Neural Gas Network Learns Topologies’. In Advances 
+    in Neural Information Processing Systems. Vol. 7. MIT Press..
+    """    
+
     def __init__(
         self,
         alpha=0.01,  # Learning rate
@@ -18,8 +58,9 @@ class GrowingNeuralGas:
         k=10,  # Num. epochs
         max_iter=10,
         max_nodes=200,
-        m=2,
-        debug=1,
+        m=200,
+        verbose=1,
+        conv_rate = 0.001
     ):
         self.alpha = alpha
         self.k = k
@@ -28,14 +69,24 @@ class GrowingNeuralGas:
         self.max_nodes = max_nodes
         self.beta = beta
         self.gamma = gamma
-        self.debug = debug
-        self.m = 300
+        self.verbose = verbose
+        self.m = m
         self.nodeid = 0
         self.graph = None
-        self.conv_rate = 0.001  # Stop when |Δerr/err| < conv_rate
+        self.conv_rate = conv_rate  # Stop when |Δerr/err| < conv_rate
 
     def fit(self, X, y=None):
+        """Fit at Generative Gaussian Graph model
 
+        Parameters
+        ----------
+        X : (array, shape = [n_samples, n_features])
+
+        Returns
+        -------
+        networkx.graph
+            Fitted graph. Weights saved as ``w`` attribute of nodes.
+        """
         # D = X.shape[1] # Data dimension
         GG = nx.Graph()
 
@@ -114,13 +165,37 @@ class GrowingNeuralGas:
             for n1 in GG.nodes():
                 # Shrink the error for all nodes
                 GG.nodes[n1]["err"] *= self.gamma
-            if self.debug > 0:
+            if self.verbose > 0:
                 print(f"Epoch {epoch},  {GG.number_of_nodes()} nodes")
 
             self.graph = GG
 
         return self.graph
 
-    def transform(X):
-        # todo 
-        pass 
+    def transform(self, X, return_nodeids=False):
+        """Transform data to nearest weights in fitted model
+
+        Parameters
+        ----------
+        X : (array, shape = [n_samples, n_features])
+            Input features
+        return_nodeid: bool
+            If return_nodeid is set to True, return the id of the node in the graph object,
+            otherwise return the weights.
+        Returns
+        -------
+        y: (array, shape=[n_samples, n_features])
+            Closest weights
+        """
+        weights = [d["w"] for _,d in self.graph.nodes(data=True)]
+        idx = [ np.argmin( np.linalg.norm(p - weights, axis=1)) for p in X ]
+        weights_out  = [ weights[i] for i in idx  ]
+
+        if return_nodeids: 
+            return idx
+        else:
+            return weights_out
+
+
+
+

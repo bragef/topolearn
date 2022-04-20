@@ -27,6 +27,8 @@ class RipsComplex:
         # We assume input to rips is a distance matrix
         self.input_distance_matrix = input_distance_matrix
 
+        self.debug_test = True
+
     # Fit from distance matrix
     # (Will not work with NaNs, prefiltered values should be set to inf)
     def fit(self, X_dist):
@@ -87,8 +89,8 @@ class RipsComplex:
                     # For current distance, check if any new nodes have reached
                     # epsilon-distance, and add these to d+1 dimensional simplices
                     point_dist = np.nanmax(X_dist[:, tuple(simplex)], axis=1)
-                    # within = np.where((point_dist > eps_prev) & (point_dist <= eps))
-                    within = np.where(( point_dist > 0) &  (point_dist <= eps))
+                    within = np.where((point_dist > 0) &  (point_dist <= eps))
+                    
                     # Ignore points already in simplex
                     point_set = frozenset(within[0]) - simplex
                     if len(point_set) == 0:

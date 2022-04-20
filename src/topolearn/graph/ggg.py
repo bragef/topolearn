@@ -78,8 +78,6 @@ class GenerativeGaussianGraph:
     Aupetit, Michaël. 2005: Learning Topology with the Generative Gaussian Graph and 
     the EM Algorithm. In Advances in Neural Information Processing Systems. Vol. 18. MIT Press.
 
-
-
     """
 
     def __init__(
@@ -112,7 +110,7 @@ class GenerativeGaussianGraph:
         self.D = D = X.shape[1]
 
         # Init nodes with GMM or KMeans
-        w_init = self.fit_init(X, self.k, method=self.init_method)
+        w_init = self._fit_init(X, self.k, method=self.init_method)
         # Delauney triangulation
         w_delauney = Delaunay(w_init)
 
@@ -134,7 +132,7 @@ class GenerativeGaussianGraph:
         sigma = self.sigma
 
         # Calculate the data distance matrices:
-        (self.Q, self.d_edge, self.d_vertex, self.L) = calc_distances(X, DG)
+        (self.Q, self.d_edge, self.d_vertex, self.L) = _calc_distances(X, DG)
 
         # Run EM algorithm
         for i in range(0, self.max_iter):
@@ -142,7 +140,7 @@ class GenerativeGaussianGraph:
                 print("Did not converge, sigma = 0")
                 break
             prev_sigma = sigma
-            (pi, sigma) = self.step_update(pi, sigma)
+            (pi, sigma) = self._step_update(pi, sigma)
             print(f"Iteration {i}, sigma={sigma}")
             if (prev_sigma - sigma) / sigma < self.conv_rate:
                 print("Converged")
@@ -161,7 +159,7 @@ class GenerativeGaussianGraph:
         return self.graph
 
     # Initial fit.
-    def fit_init(self, X, n_components, method="GMM"):
+    def _fit_init(self, X, n_components, method="GMM"):
         if method == "GMM":
             # It would make sense to experiment with initialisations.
             # We use 'tied' covariance here, which is reasonable since the
@@ -181,20 +179,20 @@ class GenerativeGaussianGraph:
         return node_centers
 
     # E and M-step.
-    def step_update(self, pi, sigma):
+    def _step_update(self, pi, sigma):
 
         # Number of data points
         M = self.Q.shape[0]
         # Distributions.
         # g0: M x N0, g1: M x N1
         # Data in rows (axis=0), components in columns (axis=1)
-        g0 = g0_matrix(self.d_vertex, sigma, self.D)
-        g1 = g1_matrix(self.Q, self.d_edge, self.L, sigma, self.D)
+        g0 = _g0_matrix(self.d_vertex, sigma, self.D)
+        g1 = _g1_matrix(self.Q, self.d_edge, self.L, sigma, self.D)
 
         # assert np.sum(pi[0]) + np.sum(pi[1]) == 1, "Probabilities does not sum to 1"
         # Pointwise probabilties.
         # (Summing over axis=1 here corresponds to Aupetit Eq. (2))
-        (p0, p1) = p_matrix(pi, g0, g1)
+        (p0, p1) = _p_matrix(pi, g0, g1)
 
         # M - step: Update mixture probabilities,
         # Aupetit Eq. (4), pi
@@ -202,7 +200,7 @@ class GenerativeGaussianGraph:
         pi[1] = np.sum(p1, axis=0) / M
 
         # Update edge and vertex probabilities with new PI's
-        (p0, p1) = p_matrix(pi, g0, g1)
+        (p0, p1) = _p_matrix(pi, g0, g1)
 
         # E-step: Update sigma using current probabilities
         Lt = np.transpose(self.L)
@@ -264,7 +262,7 @@ class GenerativeGaussianGraph:
         return edgeprobs
 
     # Retrieve mixing probabilities (pi) from graph
-    def mprobs(self, graph=None):
+    def mixing_probabilities(self, graph=None):
         if graph is None:
             graph = self.graph
         pi0 = [p for n1, p in graph.nodes(data="p")]
@@ -303,14 +301,14 @@ class GenerativeGaussianGraph:
         """
         if graph is None:
             graph = self.graph
-        (Q, d_edge, d_vertex, L) = calc_distances(X, graph)
+        (Q, d_edge, d_vertex, L) = _calc_distances(X, graph)
         # Extract the probability weights from current graph.  Since we may be
         # dealing with a pruned subgraph, we cannot use self.pi
-        pi = self.mprobs(graph)
-        g0 = g0_matrix(d_vertex, self.sigma, self.D)
-        g1 = g1_matrix(Q, d_edge, L, self.sigma, self.D)
+        pi = self.mixing_probabilities(graph)
+        g0 = _g0_matrix(d_vertex, self.sigma, self.D)
+        g1 = _g1_matrix(Q, d_edge, L, self.sigma, self.D)
 
-        (p0, p1) = p_matrix(pi, g0, g1)
+        (p0, p1) = _p_matrix(pi, g0, g1)
         return (p0, p1)
 
 
@@ -324,7 +322,7 @@ class GenerativeGaussianGraph:
 # d_edge = || q_ij - x_i || (M x N1)
 # d_vertex = || w - x_j ||  (M x N0)
 # L_vec = || w_a - w_b || (N1 x 1)
-def calc_distances(X, DG):
+def _calc_distances(X, DG):
     # Allocate matrices with dimension n x N1
     Q_matrix = np.zeros((len(X), DG.number_of_edges()))
     # Save || x_j - q_j ||
@@ -363,7 +361,7 @@ def calc_distances(X, DG):
 #
 # Multivariate normal pdf.
 # Output dimension: M x N0
-def g0_matrix(d_vertex, sigma, D):
+def _g0_matrix(d_vertex, sigma, D):
     return np.power(2 * np.pi * sigma**2, -D / 2) * np.exp(
         -(d_vertex**2) / (2 * sigma**2)
     )
@@ -373,7 +371,7 @@ def g0_matrix(d_vertex, sigma, D):
 # Calculate g1 for all edges.
 # Input dimensions: Q_ij (M x N1), Lvq (N1), L_vec (1 x N1)
 # Output dimension: M x N1
-def g1_matrix(Q, d_edge, l_edge, sigma, D):
+def _g1_matrix(Q, d_edge, l_edge, sigma, D):
     Q_ji = Q.T  # Edgewise operations, want rows as edges
     # Eq.(1) Aupetit 2005
     res = np.power(2 * np.pi * sigma**2, -(D - 1) / 2)
@@ -389,7 +387,7 @@ def g1_matrix(Q, d_edge, l_edge, sigma, D):
 # Component probabilities
 # Apply Bayes theorem to go from  P(component|data) to P(data|component)
 # (The P's used in Aupetit eq. (4), denominator is eq. (2))
-def p_matrix(pi, g0, g1):
+def _p_matrix(pi, g0, g1):
     p0 = g0 * np.transpose(pi[0])
     p1 = g1 * np.transpose(pi[1])
     pxj = np.reshape(np.sum(p0, axis=1) + np.sum(p1, axis=1), (-1, 1))

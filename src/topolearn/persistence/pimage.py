@@ -1,5 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as pl
 from scipy.stats import norm
+
 
 # A limited implementation of Persistence Images, as described in Adams et.al 2017:
 # Persistence Images: A Stable Vector Representation of Persistent Homology
@@ -7,6 +9,8 @@ from scipy.stats import norm
 
 # Default weight function suggested by Adams et.al.
 def weight_linear(u_p, p_max):
+    """Linear weight function
+    """    
     if u_p < 0:
         return 0
     elif u_p > 1:
@@ -71,6 +75,13 @@ class PersistenceImage:
         # Max homology dimenshion
         self.max_dim = images.shape[0]-1      
         return self.images
+
+    def plot(self):
+        for i in range(0, self.max_dim):
+            pl.figure()
+            pl.title(f"$_{i}$")
+            pl.imshow(self.images[i], origin='lower', extent=self.extent,  cmap='Blues')
+
 
     #  ¯\_(ツ)_/¯
     def as_vector(self):

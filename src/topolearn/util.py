@@ -9,6 +9,21 @@ import pandas as pd
 # Plot graph together with data points for example plots.
 # X should be 2D data, all nodes should have a w attribute with position
 def plot_graph_with_data(graph, X, axis=False, alpha=0.25):
+    """Plot data points and graph together 
+
+    Useful to visualise graphs learned from two dimensional data
+
+    Parameters
+    ----------
+    graph : networkx.graph
+        Fittet graph where the node attributes ``w`` contain coordinates 
+    X : matrix
+        Feature matrix
+    axis : bool, optional
+        Plot axis 
+    alpha : float, optional
+        Opacity value for graph edges
+    """    
     # graph = learner.fit(X)
     fig, ax = pl.subplots()
     pos = {n: (d["w"][0], d["w"][1]) for (n, d) in graph.nodes(data=True)}
@@ -69,5 +84,5 @@ def make_shells(n, dim=3, noise=0):
         )
     else:
         X *= np.reshape(y, (n, 1))
-    return (y, X)
+    return (X, y)
 

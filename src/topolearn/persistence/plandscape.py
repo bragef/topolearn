@@ -1,5 +1,6 @@
 
 import numpy as np
+import matplotlib.pyplot as pl
 
 class PersistenceLandscape:
 
@@ -8,9 +9,26 @@ class PersistenceLandscape:
 
     # For statistics to make sense, max_m need to be set beforehand.
     def fit(self, pairs, dim = 1, resolution = 100, max_m = None):
+        """Find the persistence landscape for a homology dimension
 
-
-        # TODO: Move the setup to SimplicalComplex
+        Parameters
+        ----------
+        pairs : _type_
+            _description_
+        dim : int, optional
+            _description_, by default 1
+        resolution : int, optional
+            _description_, by default 100
+        max_m : float, optional
+            Maximum value for the landscape function. Used to find the grid resolution, 
+            if the values are used for statistics or comparison, these should be set to
+            a shared value for all the landscapes.
+            
+        Returns
+        -------
+        matrix
+            Matrix with persistence landscape values
+        """
         pairs = np.array(pairs)
         sdim = np.array(pairs[:, 2], dtype=int) 
         b = np.array(pairs[:, 3], dtype=float)  # Births
@@ -39,11 +57,17 @@ class PersistenceLandscape:
 
         self.grid_m = grid_m
         self.landscape = landscape
+        self.dim = dim
 
         return self.landscape
 
 
-    # def plot():
+    def plot(self):
+        pl.figure()
+        for row in self.landscape:
+            pl.title(f"$H_{self.dim}")
+            pl.plot(self.grid_m, row)
+
 
 
 

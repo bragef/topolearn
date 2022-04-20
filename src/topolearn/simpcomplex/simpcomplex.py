@@ -103,11 +103,6 @@ class SimplicalComplex:
             pairs_out.append((b, d, sdim, birth_f, death_f))
         return pairs_out
 
-#  We want to compare two sets of birth-death simplices with the assosicated death
-# distance
-# 
-# { {a}, {b} }
-# def birth_death_sets(simplices, bdpairs):
 
 
 

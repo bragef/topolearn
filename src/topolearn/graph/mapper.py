@@ -4,31 +4,45 @@ import networkx as nx
 from sklearn import mixture
 from sklearn.cluster import AgglomerativeClustering
 
+def filter_d1(X):
+    """Filter dim 1
+    """
+    # Default filter function is first dimension of feature matrix
+    return X[:,0]
+
 
 class Mapper:
+
+
     def __init__(
-        self, n_intervals=10, min_clustersize=2, verbose=0, cluster_mindistance=0.1
+        self, n_intervals=10, min_clustersize=2, verbose=0, cluster_mindistance=0.1, filter_fun=filter_d1
     ):
         self.min_clustersize = min_clustersize
         self.n_intervals = n_intervals
         self.verbose = verbose
         self.cluster_mindistance = cluster_mindistance
+        self.filter_fun = filter_fun
+        self.overlap = 0.25
 
-    # Filter function is first dimension of feature matrix unless
-    # specified otherwise.
-    def filter_x(self, X):
-        return X[:, 0]
+    def fit(self, X):
+
+        intervals = self._split_intervals(X,self.n_intervals, self.overlap)
+        clusters = self._find_clusters(X, intervals)
+        graph = self._connect_clusters(clusters)
+
+        return graph
+
 
     # Split into overlapping covers.
     # Returns a list of indices for each set.
-    def split_intervals(self, X, n_intervals=10, overlap=0.25):
+    def _split_intervals(self, X, n_intervals=10, overlap=0.25):
 
         # Minimal sanity check.
         if abs(overlap) > 1:
             warnings.warn("overlap should be between 0 and 1")
 
         # Get the range of filter values.
-        filter_values = np.array(self.filter_x(X))
+        filter_values = np.array(self.filter_fun(X))
         fmin = filter_values.min()
         fmax = filter_values.max()
 
@@ -46,8 +60,8 @@ class Mapper:
         return bins
 
     # Apply selected clustering algorithm to the covers.
-    # Return list(    )
-    def find_clusters(self, X, interval_indices):
+    # 
+    def _find_clusters(self, X, interval_indices):
         cluster_id = 0
         clusters = list()
         for interval_idx in interval_indices:
@@ -73,7 +87,7 @@ class Mapper:
 
     # Given the list of clusters find the edges.
     # Returns nx.Graph object
-    def connect_clusters(self, clusters):
+    def _connect_clusters(self, clusters):
         prev_interval = []
         graph = nx.Graph()
         for interval in clusters:
@@ -92,6 +106,9 @@ class Mapper:
 
         return graph
 
+    def tranform(X):
+         warnings.warn("Not implemented yet")
+    
 
 # Cluster algorithms.
 
@@ -107,6 +124,7 @@ def cluster_agglomerative(X, distance_threshold=0.1):
     cluster_labels = model.fit_predict(X)
 
     return cluster_labels
+
 
 
 # Gaussian mixture model.

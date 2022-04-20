@@ -3,7 +3,7 @@ from scipy.spatial import KDTree
 
 
 def distance_matrix(X):
-    """Calculate euclidian distance matrix 
+    """Calculate euclidian distance matrix
 
     Parameters
     ----------
@@ -22,12 +22,7 @@ def distance_matrix(X):
 
 def distance_matrix_mreach(X, k):
     """Calculate the mutual reachability distance matrix of order k   
-
     
-
-    See  https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html for an
-    explantion of mreach and core distance. 
-
     Parameters
     ----------
     X : matrix
@@ -40,6 +35,13 @@ def distance_matrix_mreach(X, k):
     -------
     numpy matrix
         Distance matrix
+
+    Notes
+    -----
+    The mutual reachability distance is a density weighted distance measure, defined as
+    $d_{\mathrm{mreach-}k}(a,b) = \max \{\mathrm{core}_k(a), \mathrm{core}_k(b), d(a,b) \}$, where
+    $d(a,b)$ is the euclidian distance, and $\mathrm{core}_k(b)$ is the distance to the k't nearest
+    neighbour. See  https://hdbscan.readthedocs.io/en/latest/how_hdbscan_works.html.
     """
     
     # d_mreach-k(a,b) = max(core_k(a), core_k(b), d(a,b))
