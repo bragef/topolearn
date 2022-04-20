@@ -11,19 +11,19 @@ from tensorflow.keras import losses, Input
 from tensorflow.keras import backend as K
 
 from topolearn.util import make_shells
-from topolearn import simpcomplex
-from topolearn import autoencoder as topoauto
+from topolearn.simpcomplex import RipsComplex
+from topolearn.loss import TopologicalLoss
 
-importlib.reload(simpcomplex)
-importlib.reload(topoauto)
+from spheres import  create_sphere_dataset
+X, y = create_sphere_dataset(n_samples=50, d=2, n_spheres =5, plot=True)
 
 
 # Dimension of the original space
-input_dim = 3
+input_dim = X.shape[0]
 # Dimension of the latent space (encoding space)
 latent_dim = 2
 
-y, X = make_shells(3000, input_dim, noise=0.01)
+# y, X = make_shells(3000, input_dim, noise=0.01)
 
 
 # Autoencoder  model
@@ -58,8 +58,8 @@ lambda_topo = 0.0001
 #
 optimizer = keras.optimizers.Adam(learning_rate=1e-3)
 loss_mse = keras.losses.MeanSquaredError()
-topoloss = topoauto.TopologicalLoss(
-    filtration=simpcomplex.RipsComplex(max_dim=1, max_radius=0.8, verbose=0),
+topoloss = TopologicalLoss(
+    filtration=RipsComplex(max_dim=1, max_radius=0.8, verbose=0),
 )
 
 train_dataset = X
