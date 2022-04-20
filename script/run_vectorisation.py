@@ -4,8 +4,8 @@
 import matplotlib.pyplot as pl
 import numpy as np
 import networkx as nx
-from topolearn import homology as ph
-from topolearn import simpcomplex
+from topolearn import persistence as ph
+from topolearn.simpcomplex import RipsComplex, distance_matrix
 from topolearn import util
 
 import importlib
@@ -19,8 +19,9 @@ X2 = X2 * 0.5
 X2[:, 0] += 2
 X = np.array(np.concatenate((X1, X2), axis=0))
 
-learner = simpcomplex.RipsComplex(max_simplices=50000, max_dim = 2)
-X_dist = simpcomplex.distance_matrix(X)
+learner = RipsComplex(max_simplices=50000, max_dim = 2)
+learner.debug_test = False
+X_dist = distance_matrix(X)
 
 simplices = learner.fit(X_dist)
 
@@ -39,11 +40,9 @@ for row in mat:
 
 pimg = ph.PersistenceImage()
 pimg.fit(pairs, sigma=0.1, resolution=50)
+pimg.plot()
 
-pl.figure()
-pl.imshow(pimg.images[0], origin='lower', extent= pimg.extent,  cmap='Blues')
-pl.figure()
-pl.imshow(pimg.images[1], origin='lower', extent= pimg.extent,  cmap='Blues')
+
 
 #%%
 
@@ -68,11 +67,14 @@ for row in mat:
 
 pimg = pimage.PersistenceImage()
 pimg.fit(pairs, sigma=0.1, resolution=50)
+pimg.plot()
 
-pl.figure()
-pl.imshow(pimg.images[0], origin='lower', extent= pimg.extent,  cmap='Blues')
-pl.figure()
-pl.imshow(pimg.images[1], origin='lower', extent= pimg.extent,  cmap='Blues')
+
+
+#pl.figure()
+#pl.imshow(pimg.images[0], origin='lower', extent= pimg.extent,  cmap='Blues')
+##pl.figure()
+#p#l.imshow(pimg.images[1], origin='lower', extent= pimg.extent,  cmap='Blues')
 
 
 
@@ -100,9 +102,8 @@ util.plot_persistance_diagram(bdpairs)
 
 pland = ph.PersistenceLandscape()
 mat = pland.fit(bdpairs, resolution=400)
-pl.figure()
-for row in mat:
-    pl.plot(pland.grid_m, row)
+pland.plot()
+
 
 pimg = ph.PersistenceImage()
 pimg.fit(pairs, sigma=0.1, resolution=50)

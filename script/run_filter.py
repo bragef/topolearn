@@ -1,13 +1,9 @@
 
 # %%
 # Rips 
-import matplotlib.pyplot as pl
 import numpy as np
-import networkx as nx
 
-from topolearn import graph
-from topolearn import simpcomplex
-from topolearn import homology as ph
+from topolearn.simpcomplex import RipsComplex, distance_matrix
 from topolearn import util
 import importlib
 importlib.reload(graph)
@@ -23,8 +19,8 @@ X2 = X2 * 0.5
 X2[:, 0] += 2
 X = np.array(np.concatenate((X1, X2), axis=0))
 
-learner = simpcomplex.RipsComplex(max_simplices = 50000, max_dim = 4, num_steps=1000)
-X_dist = simpcomplex.distance_matrix(X)
+learner = RipsComplex(max_simplices = 50000, max_dim = 4, num_steps=1000)
+X_dist = distance_matrix(X)
 
 simplices = learner.fit(X_dist)
 graph = simplices.graph(X)

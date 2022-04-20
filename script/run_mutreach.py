@@ -5,7 +5,7 @@ import numpy as np
 import networkx as nx
 
 from topolearn import simpcomplex
-from topolearn import homology as ph
+from topolearn import persistence as ph
 from topolearn import util
 import importlib
 importlib.reload(ph)
@@ -36,10 +36,8 @@ util.plot_persistance_diagram(bdpairs, max_dim=1)
 
 #%%
 import numpy as np
-# from sklearn.neighbors import KDTree
-from scipy.spatial import KDTree
 from topolearn import simpcomplex
-from topolearn import homology as ph
+from topolearn import persistence as ph
 from topolearn import util
 from sklearn.datasets import make_moons, make_circles, make_blobs
 
