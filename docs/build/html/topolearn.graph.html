@@ -1,0 +1,488 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>topolearn.graph package &#8212; Topolearn 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="_static/alabaster.css" />
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="topolearn.persistence package" href="topolearn.persistence.html" />
+    <link rel="prev" title="topolearn package" href="topolearn.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="topolearn-graph-package">
+<h1>topolearn.graph package<a class="headerlink" href="#topolearn-graph-package" title="Permalink to this headline">¶</a></h1>
+<section id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="module-topolearn.graph.ggg">
+<span id="topolearn-graph-ggg-module"></span><h2>topolearn.graph.ggg module<a class="headerlink" href="#module-topolearn.graph.ggg" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="topolearn.graph.ggg.GenerativeGaussianGraph">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topolearn.graph.ggg.</span></span><span class="sig-name descname"><span class="pre">GenerativeGaussianGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sigma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_method</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'GNN'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conv_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/ggg.html#GenerativeGaussianGraph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.ggg.GenerativeGaussianGraph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Generative Gaussian Graph</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>k</strong> (<em>int</em><em>, </em><em>default = 20</em>) – Number of nodes</p></li>
+<li><p><strong>init_method</strong> (<em>{'GNN'</em><em>, </em><em>'KMeans'}</em><em>, </em><em>default='GNN'</em>) – Initialisation method for the nodes. ‘GNN’ for Gaussian Mixutre model or
+‘KMeans’. KMeans is faster, and preferrable if _k_ is set to a high value.</p></li>
+<li><p><strong>max_iter</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of iteration</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topolearn.graph.ggg.GenerativeGaussianGraph.graph">
+<span class="sig-name descname"><span class="pre">graph</span></span><a class="headerlink" href="#topolearn.graph.ggg.GenerativeGaussianGraph.graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>The individual probability weights (mixing probabilities) are accessible
+as data attribute <cite>p</cite> on the edges and nodes, the input data points are
+accessible as the <cite>w</cite> attribute on the nodes.</p>
+<p>The learned graph is the fully connected Dealauney graph. To get a pruned version
+of the graph, use the <cite>pruned_graph(eps=eps)</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>networkx.graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topolearn.graph.ggg.GenerativeGaussianGraph.sigma">
+<span class="sig-name descname"><span class="pre">sigma</span></span><a class="headerlink" href="#topolearn.graph.ggg.GenerativeGaussianGraph.sigma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standard deviation of the Gaussian model learned by the algorithm</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">topolearn.graph</span> <span class="kn">import</span> <span class="n">ggg</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">topolearn.util</span> <span class="kn">import</span> <span class="n">plot_graph_with_data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_moons</span><span class="p">,</span> <span class="n">make_circles</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">make_moons</span><span class="p">(</span><span class="n">noise</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">learner</span> <span class="o">=</span> <span class="n">ggg</span><span class="o">.</span><span class="n">GenerativeGaussianGraph</span><span class="p">(</span><span class="n">k</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">init_method</span><span class="o">=</span><span class="s2">&quot;KMeans&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span> <span class="o">=</span> <span class="n">learner</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Plot the full graph fitted by gnn or kmeans</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plot_graph_with_data</span><span class="p">(</span><span class="n">learner</span><span class="o">.</span><span class="n">graph</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Plot number of eges vs log probabilties to identify intersting scales</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">learner</span><span class="o">.</span><span class="n">kneeplot</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># Get a pruned graph and plot</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plot_graph_with_data</span><span class="p">(</span> <span class="n">learner</span><span class="o">.</span><span class="n">pruned_graph</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mi">4</span><span class="p">)),</span> <span class="n">X</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>Implements the Generative Gaussian Graph algorithm described in</p>
+<p>Aupetit, Michaël. 2005: Learning Topology with the Generative Gaussian Graph and
+the EM Algorithm. In Advances in Neural Information Processing Systems. Vol. 18. MIT Press.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.ggg.GenerativeGaussianGraph.edge_probs">
+<span class="sig-name descname"><span class="pre">edge_probs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/ggg.html#GenerativeGaussianGraph.edge_probs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.ggg.GenerativeGaussianGraph.edge_probs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.ggg.GenerativeGaussianGraph.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/ggg.html#GenerativeGaussianGraph.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.ggg.GenerativeGaussianGraph.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit at Generative Gaussian Graph model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>(</em><em>array</em><em>, </em><em>shape =</em><em> [</em><em>n_samples</em><em>, </em><em>n_features</em><em>]</em><em>)</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Graph with the fitted mixture probabilties</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>networkx.graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.ggg.GenerativeGaussianGraph.kneeplot">
+<span class="sig-name descname"><span class="pre">kneeplot</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/ggg.html#GenerativeGaussianGraph.kneeplot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.ggg.GenerativeGaussianGraph.kneeplot" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.ggg.GenerativeGaussianGraph.mixing_probabilities">
+<span class="sig-name descname"><span class="pre">mixing_probabilities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/ggg.html#GenerativeGaussianGraph.mixing_probabilities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.ggg.GenerativeGaussianGraph.mixing_probabilities" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.ggg.GenerativeGaussianGraph.pruned_graph">
+<span class="sig-name descname"><span class="pre">pruned_graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">eps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/ggg.html#GenerativeGaussianGraph.pruned_graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.ggg.GenerativeGaussianGraph.pruned_graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return an edge-pruned version of the graph.</p>
+<p>Return a copy of the fitted graph where all edges with probability weight &lt;eps are pruned</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>eps</strong> (<em>float</em>) – Minimum edge probabiltiy to keep</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Pruned graph</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>networkx.graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.ggg.GenerativeGaussianGraph.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/ggg.html#GenerativeGaussianGraph.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.ggg.GenerativeGaussianGraph.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate mixture probabilties for new features</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>(</em><em>array</em><em>, </em><em>shape =</em><em> [</em><em>n_samples</em><em>, </em><em>n_features</em><em>]</em><em>)</em>) – Input features</p></li>
+<li><p><strong>graph</strong> (<em>networkx.graph</em><em>, </em><em>optional</em><em>, </em><em>default=self.graph</em>) – A fitted graph with mixture probabilties. This argument can be used to
+get the mixture probabilties of a pruned graph.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Mixture probabilities for X using the (optionally pruned) fitted graph.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(array shape=[n_samples, n_vertices], array shape=[n_samples, n_edges])</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-topolearn.graph.gng">
+<span id="topolearn-graph-gng-module"></span><h2>topolearn.graph.gng module<a class="headerlink" href="#module-topolearn.graph.gng" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="topolearn.graph.gng.GrowingNeuralGas">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topolearn.graph.gng.</span></span><span class="sig-name descname"><span class="pre">GrowingNeuralGas</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">beta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.75</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gamma</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.995</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_age</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_nodes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">m</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conv_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/gng.html#GrowingNeuralGas"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.gng.GrowingNeuralGas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Growing Neural Gas graph learner</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>alpha</strong> (<em>float</em>) – Learning rate, default 0.01</p></li>
+<li><p><strong>beta</strong> (<em>float</em>) – Local error decay, default 0.75</p></li>
+<li><p><strong>gamma</strong> (<em>float</em>) – Global error decay, default 0.995</p></li>
+<li><p><strong>max_age</strong> (<em>int</em>) – Max age for nodes</p></li>
+<li><p><strong>max_nodes</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum number of nodes to learn, 200</p></li>
+<li><p><strong>max_iter</strong> (<em>int</em>) – Maximum number of iteration</p></li>
+<li><p><strong>conv_rate</strong> (<em>float</em>) – Convergence criterion. Stop if Δerr/err &lt; conv_rate</p></li>
+<li><p><strong>k</strong> (<em>int</em>) – Number of epochs</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="c1"># Growing Neural Gas example code</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">topolearn.graph</span> <span class="kn">import</span> <span class="n">gng</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">topolearn.util</span> <span class="kn">import</span> <span class="n">plot_graph_with_data</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_moons</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">mean_squared_error</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">make_moons</span><span class="p">(</span><span class="n">noise</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">2000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">learner</span> <span class="o">=</span> <span class="n">gng</span><span class="o">.</span><span class="n">GrowingNeuralGas</span><span class="p">(</span><span class="n">max_nodes</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span> <span class="o">=</span> <span class="n">learner</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plot_graph_with_data</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mse</span> <span class="o">=</span> <span class="n">mean_squared_error</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">learner</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">X</span><span class="p">))</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>Algorithm described in:
+Fritzke, Bernd. 1994. ‘A Growing Neural Gas Network Learns Topologies’. In Advances
+in Neural Information Processing Systems. Vol. 7. MIT Press..</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.gng.GrowingNeuralGas.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/gng.html#GrowingNeuralGas.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.gng.GrowingNeuralGas.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit at Generative Gaussian Graph model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>(</em><em>array</em><em>, </em><em>shape =</em><em> [</em><em>n_samples</em><em>, </em><em>n_features</em><em>]</em><em>)</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Fitted graph. Weights saved as <code class="docutils literal notranslate"><span class="pre">w</span></code> attribute of nodes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>networkx.graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.gng.GrowingNeuralGas.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_nodeids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/gng.html#GrowingNeuralGas.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.gng.GrowingNeuralGas.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform data to nearest weights in fitted model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>(</em><em>array</em><em>, </em><em>shape =</em><em> [</em><em>n_samples</em><em>, </em><em>n_features</em><em>]</em><em>)</em>) – Input features</p></li>
+<li><p><strong>return_nodeid</strong> (<em>bool</em>) – If return_nodeid is set to True, return the id of the node in the graph object,
+otherwise return the weights.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>y</strong> – Closest weights</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(array, shape=[n_samples, n_features])</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-topolearn.graph.mapper">
+<span id="topolearn-graph-mapper-module"></span><h2>topolearn.graph.mapper module<a class="headerlink" href="#module-topolearn.graph.mapper" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="topolearn.graph.mapper.Mapper">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topolearn.graph.mapper.</span></span><span class="sig-name descname"><span class="pre">Mapper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_intervals=10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose=0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filter_fun=&lt;function</span> <span class="pre">filter_d1&gt;</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">min_clustersize=1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/mapper.html#Mapper"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.mapper.Mapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Use the Mapper algorithm to learn a Reeb graph</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_intervals</strong> (<em>int</em><em>, </em><em>optional</em>) – by default 10</p></li>
+<li><p><strong>filter_fun</strong> (<em>function</em><em>(</em><em>X</em><em>) </em><em>-&gt; f</em><em> , </em><em>optional</em>) – Filter function. Default is first column of data matrix</p></li>
+<li><p><strong>min_clustersize</strong> (<em>int</em><em>, </em><em>optional</em>) – If set, remove clusters below this size.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topolearn.graph.mapper.Mapper.graph">
+<span class="sig-name descname"><span class="pre">graph</span></span><a class="headerlink" href="#topolearn.graph.mapper.Mapper.graph" title="Permalink to this definition">¶</a></dt>
+<dd><p>Learned graph. Node labels are tuples (int, int) with filtration
+index and cluster index within filtration interval.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>networkx.graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topolearn.graph.mapper.Mapper.bin_ranges">
+<span class="sig-name descname"><span class="pre">bin_ranges</span></span><a class="headerlink" href="#topolearn.graph.mapper.Mapper.bin_ranges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filtration intervals</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type</dt>
+<dd class="field-odd"><p>(array, shape=(n_intervals,2))</p>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">X1</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">make_circles</span><span class="p">(</span><span class="n">noise</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">learner</span> <span class="o">=</span> <span class="n">Mapper</span><span class="p">(</span><span class="n">n_intervals</span> <span class="o">=</span> <span class="mi">20</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">graph</span> <span class="o">=</span> <span class="n">learner</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plot_graph_with_data</span><span class="p">(</span><span class="n">graph</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># nodes = learner.transform(X)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>The current version uses KMeans as clustering, and select the number of clusters
+using the Gap-statistic. I originally wrote the code using Gaussian Mixtures or
+Agglomerative Clustering. These are available in <code class="docutils literal notranslate"><span class="pre">topolearn.util.cluster</span></code>,
+but will need som retrofitting to be functional again.</p>
+<p>The mapper algorithm is described in
+Singh, Gurjeet, Facundo Memoli, and Gunnar Carlsson. 2007. Topological Methods
+for the Analysis of High Dimensional Data Sets and 3D Object Recognition.
+The Eurographics Association.</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.mapper.Mapper.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/mapper.html#Mapper.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.mapper.Mapper.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit a Mapper graph</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>(</em><em>array</em><em>, </em><em>shape =</em><em> [</em><em>n_samples</em><em>, </em><em>n_features</em><em>]</em><em>)</em>) – Data matrix</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Learned graph</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>networkx.graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.mapper.Mapper.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/mapper.html#Mapper.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.mapper.Mapper.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform data to closest mapper graph node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>(</em><em>array</em><em>, </em><em>shape =</em><em> [</em><em>n_samples</em><em>, </em><em>n_features</em><em>]</em><em>)</em>) – Data matrix</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Node indices to the learned graph.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(int, int)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="topolearn.graph.mapper.filter_d1">
+<span class="sig-prename descclassname"><span class="pre">topolearn.graph.mapper.</span></span><span class="sig-name descname"><span class="pre">filter_d1</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/mapper.html#filter_d1"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.mapper.filter_d1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filter dim 1</p>
+</dd></dl>
+
+</section>
+<section id="module-topolearn.graph.som">
+<span id="topolearn-graph-som-module"></span><h2>topolearn.graph.som module<a class="headerlink" href="#module-topolearn.graph.som" title="Permalink to this headline">¶</a></h2>
+<dl class="py class">
+<dt class="sig sig-object py" id="topolearn.graph.som.SelfOrganisingMaps">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topolearn.graph.som.</span></span><span class="sig-name descname"><span class="pre">SelfOrganisingMaps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1000</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.05</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">conv_rate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/som.html#SelfOrganisingMaps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.som.SelfOrganisingMaps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.som.SelfOrganisingMaps.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/som.html#SelfOrganisingMaps.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.som.SelfOrganisingMaps.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit at Generative Gaussian Graph model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>(</em><em>array</em><em>, </em><em>shape =</em><em> [</em><em>n_samples</em><em>, </em><em>n_features</em><em>]</em><em>)</em>) – </p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Fitted graph. Weights saved as <code class="docutils literal notranslate"><span class="pre">w</span></code> attribute of nodes.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>networkx.graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.graph.som.SelfOrganisingMaps.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_nodeids</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/graph/som.html#SelfOrganisingMaps.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.graph.som.SelfOrganisingMaps.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform data to nearest weights in fitted model</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>X</strong> (<em>(</em><em>array</em><em>, </em><em>shape =</em><em> [</em><em>n_samples</em><em>, </em><em>n_features</em><em>]</em><em>)</em>) – Input features</p></li>
+<li><p><strong>return_nodeid</strong> (<em>bool</em>) – If return_nodeid is set to True, return the id of the node in the graph object,
+otherwise return the weights.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>y</strong> – Coordinates of closest point on</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>(array, shape=[n_samples, n_features])</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+<section id="module-topolearn.graph">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-topolearn.graph" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="topolearn.html">Topolearn</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">topolearn.graph package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-topolearn.graph.ggg">topolearn.graph.ggg module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-topolearn.graph.gng">topolearn.graph.gng module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-topolearn.graph.mapper">topolearn.graph.mapper module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-topolearn.graph.som">topolearn.graph.som module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#module-topolearn.graph">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topolearn.persistence.html">topolearn.persistence package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topolearn.simpcomplex.html">topolearn.simpcomplex package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="topolearn.html">Documentation overview</a><ul>
+      <li>Previous: <a href="topolearn.html" title="previous chapter">topolearn package</a></li>
+      <li>Next: <a href="topolearn.persistence.html" title="next chapter">topolearn.persistence package</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Brage Førland.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+      |
+      <a href="_sources/topolearn.graph.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

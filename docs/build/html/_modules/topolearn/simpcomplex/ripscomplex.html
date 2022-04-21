@@ -1,0 +1,245 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>topolearn.simpcomplex.ripscomplex &#8212; Topolearn 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for topolearn.simpcomplex.ripscomplex</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">time</span>
+<span class="kn">from</span> <span class="nn">.simpcomplex</span> <span class="kn">import</span> <span class="n">SimplicalComplex</span>
+<span class="kn">from</span> <span class="nn">.distance</span> <span class="kn">import</span> <span class="n">distance_matrix</span><span class="p">,</span> <span class="n">points_max_distance</span>
+
+<span class="c1"># Vietoris-Rips filtering</span>
+
+<span class="c1"># The Vietoris-Rips complex can be calculated from distances alone,</span>
+<span class="c1"># which both simplifies calcualations, and make it possible to apply</span>
+<span class="c1"># the filtering on other distances than euclidan.</span>
+<span class="c1">#</span>
+
+<div class="viewcode-block" id="RipsComplex"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.ripscomplex.RipsComplex">[docs]</a><span class="k">class</span> <span class="nc">RipsComplex</span><span class="p">:</span>
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        
+        <span class="bp">self</span><span class="p">,</span> <span class="n">max_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">max_radius</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_simplices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">input_distance_matrix</span> <span class="o">=</span><span class="kc">True</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
+        <span class="c1"># Limit number of simplices by different means</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_dim</span> <span class="o">=</span> <span class="n">max_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_radius</span> <span class="o">=</span> <span class="n">max_radius</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_simplices</span> <span class="o">=</span> <span class="n">max_simplices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_steps</span> <span class="o">=</span> <span class="n">num_steps</span>
+        <span class="c1"># We assume input to rips is a distance matrix</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_distance_matrix</span> <span class="o">=</span> <span class="n">input_distance_matrix</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug_test</span> <span class="o">=</span> <span class="kc">True</span>
+
+    <span class="c1"># Fit from distance matrix</span>
+    <span class="c1"># (Will not work with NaNs, prefiltered values should be set to inf)</span>
+<div class="viewcode-block" id="RipsComplex.fit"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.ripscomplex.RipsComplex.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X_dist</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_distance_matrix</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
+            <span class="n">X_dist</span> <span class="o">=</span> <span class="n">distance_matrix</span><span class="p">(</span><span class="n">X_dist</span><span class="p">)</span> 
+
+        <span class="n">X_dist_lower</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tril</span><span class="p">(</span><span class="n">X_dist</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_radius</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_radius</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">X_dist</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">max_radius</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_radius</span>
+        <span class="c1"># Linear breaks for now. Try area/volumebased for finer resolution?</span>
+        <span class="c1"># Or unique, sorted distances?</span>
+        <span class="n">breaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_radius</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_steps</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># breaks = np.sort(np.unique(X_dist_lower))</span>
+
+        <span class="c1"># Simplex added counter (index to boundary matrix)</span>
+        <span class="n">sidx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Keep an index of all the added simplices, index and filtration value</span>
+        <span class="n">simplex_collection</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Add the points as 0-simplices</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_dist</span><span class="p">)):</span>
+            <span class="c1"># Value of a simlex is (index, dimension, filter distance)</span>
+            <span class="n">simplex</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">([</span><span class="n">i</span><span class="p">])</span>
+            <span class="n">simplex_collection</span><span class="p">[</span><span class="n">simplex</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">sidx</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">eps_prev</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">t_start</span> <span class="o">=</span> <span class="n">time</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">eps</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">breaks</span><span class="p">):</span>
+            <span class="c1"># Find all new edges</span>
+            <span class="n">within</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">X_dist_lower</span> <span class="o">&gt;</span> <span class="n">eps_prev</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">X_dist_lower</span> <span class="o">&lt;=</span> <span class="n">eps</span><span class="p">))</span>
+            <span class="c1"># If no new points are within range, skip to next filtration value</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">within</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            
+            <span class="c1"># Edges in current filtration value</span>
+            <span class="n">edges</span> <span class="o">=</span> <span class="p">[</span><span class="nb">frozenset</span><span class="p">({</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">})</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">within</span><span class="p">)]</span>
+            <span class="n">edge_lengths</span> <span class="o">=</span> <span class="p">[</span><span class="n">points_max_distance</span><span class="p">(</span><span class="n">X_dist</span><span class="p">,</span> <span class="n">edge</span><span class="p">)</span> <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">]</span>
+            <span class="n">edge_tuple</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="p">(</span><span class="n">edge</span><span class="p">,</span> <span class="n">edist</span><span class="p">)</span> <span class="k">for</span> <span class="n">edist</span><span class="p">,</span> <span class="n">edge</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">edge_lengths</span><span class="p">,</span> <span class="n">edges</span><span class="p">))</span>
+            <span class="p">]</span>
+            <span class="n">edges</span> <span class="o">=</span> <span class="p">[</span> <span class="n">edge</span> <span class="k">for</span> <span class="n">edge</span><span class="p">,</span><span class="n">edist</span> <span class="ow">in</span> <span class="n">edge_tuple</span> <span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">edge</span><span class="p">,</span> <span class="n">edge_length</span> <span class="ow">in</span> <span class="n">edge_tuple</span><span class="p">:</span>
+                <span class="n">simplex_collection</span><span class="p">[</span><span class="n">edge</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">sidx</span><span class="p">,</span>
+                    <span class="mi">1</span><span class="p">,</span>
+                    <span class="n">edge_length</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="n">sidx</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># Find the higher order simplices</span>
+            <span class="n">simplices_added_prev_dim</span> <span class="o">=</span> <span class="n">edges</span>  <span class="c1"># Simplices added lower dimension</span>
+            <span class="n">simplices_new</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Simplices added current dimension</span>
+            <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">simplex</span> <span class="ow">in</span> <span class="n">simplices_added_prev_dim</span><span class="p">:</span>
+                    <span class="c1"># For current distance, check if any new nodes have reached</span>
+                    <span class="c1"># epsilon-distance, and add these to d+1 dimensional simplices</span>
+                    <span class="n">point_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">X_dist</span><span class="p">[:,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">simplex</span><span class="p">)],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">within</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">((</span><span class="n">point_dist</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span>  <span class="p">(</span><span class="n">point_dist</span> <span class="o">&lt;=</span> <span class="n">eps</span><span class="p">))</span>
+                    
+                    <span class="c1"># Ignore points already in simplex</span>
+                    <span class="n">point_set</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">within</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">simplex</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">point_set</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="c1"># Add each new point to the simplex</span>
+                    <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">point_set</span><span class="p">:</span>
+                        <span class="c1"># New simplex is union of new point and old points</span>
+                        <span class="n">new_simplex</span> <span class="o">=</span> <span class="n">simplex</span> <span class="o">|</span> <span class="nb">frozenset</span><span class="p">({</span><span class="n">point</span><span class="p">})</span>
+                        <span class="c1"># Avoid counting the same simplex more than once for the same filter value</span>
+                        <span class="c1"># (matters only for counter, index values ensures that simplices are unique)</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">new_simplex</span> <span class="ow">in</span> <span class="n">simplex_collection</span><span class="p">:</span>
+                            <span class="n">simplices_new</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_simplex</span><span class="p">)</span>
+                            <span class="c1"># Calculate the length of the edge wich completes the simplex to</span>
+                            <span class="c1"># get a continous birth value for the simplex rather than the</span>
+                            <span class="c1"># discrete values from the Rips iterations</span>
+                            <span class="n">simplex_max_dist</span> <span class="o">=</span> <span class="n">points_max_distance</span><span class="p">(</span><span class="n">X_dist</span><span class="p">,</span> <span class="n">new_simplex</span><span class="p">)</span>
+                            <span class="n">simplex_collection</span><span class="p">[</span><span class="n">new_simplex</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                                <span class="n">sidx</span><span class="p">,</span>
+                                <span class="n">dim</span><span class="p">,</span>
+                                <span class="n">simplex_max_dist</span><span class="p">,</span>
+                            <span class="p">)</span>
+                            <span class="n">sidx</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">simplices_added_prev_dim</span> <span class="o">=</span> <span class="n">simplices_new</span>
+            <span class="n">eps_prev</span> <span class="o">=</span> <span class="n">eps</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;eps=</span><span class="si">{</span><span class="n">eps</span><span class="si">}</span><span class="s2">, n=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">simplex_collection</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">max_simplices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+                <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">simplex_collection</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_simplices</span>
+            <span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reached max number of simplices (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_simplices</span><span class="si">}</span><span class="s2">) at eps=</span><span class="si">{</span><span class="n">eps</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Rips filtration: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">simplex_collection</span><span class="p">)</span><span class="si">}</span><span class="s2"> simplices, </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">t_start</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2"> sec.&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">simplical_complex</span> <span class="o">=</span> <span class="n">SimplicalComplex</span><span class="p">(</span><span class="n">simplex_collection</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplical_complex</span></div>
+
+<div class="viewcode-block" id="RipsComplex.transform"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.ripscomplex.RipsComplex.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c1"># Only transform self here.</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplical_complex</span><span class="o">.</span><span class="n">birth_death_pairs</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="RipsComplex.fit_and_transform"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.ripscomplex.RipsComplex.fit_and_transform">[docs]</a>    <span class="k">def</span> <span class="nf">fit_and_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span></div></div>
+        
+
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../topolearn.html">Topolearn</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.graph.html">topolearn.graph package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.persistence.html">topolearn.persistence package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.simpcomplex.html">topolearn.simpcomplex package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../topolearn.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Brage Førland.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

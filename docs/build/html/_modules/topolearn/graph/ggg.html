@@ -1,0 +1,498 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>topolearn.graph.ggg &#8212; Topolearn 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for topolearn.graph.ggg</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="k">as</span> <span class="nn">stats</span>
+<span class="kn">from</span> <span class="nn">scipy.special</span> <span class="kn">import</span> <span class="n">erf</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">Delaunay</span>
+<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">mixture</span>
+<span class="kn">from</span> <span class="nn">sklearn.cluster</span> <span class="kn">import</span> <span class="n">MiniBatchKMeans</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+
+<span class="c1">#  Algorithm from Aupetit 2005:</span>
+<span class="c1">#</span>
+<span class="c1"># 1. Initialisation of points using standard algorithm, GNN, or KNN</span>
+<span class="c1">#   1.1. Initialisation of k points</span>
+<span class="c1">#   1.2. Standard GMM with k centers</span>
+<span class="c1">#   1.3. Delaney graph</span>
+<span class="c1">#   1.4. Initialise mixture model with equal weights for all edges and vertices</span>
+<span class="c1"># 2. Optimize likelihood using EM-algorithm</span>
+<span class="c1">#   2.1 Update the π-vector (M-step)</span>
+<span class="c1">#       and shared variance σ^2 (E-step),</span>
+<span class="c1">#       (Aupetit (4) and (5))</span>
+<span class="c1">#   2.3 Repeat EM until convergence or t_max is</span>
+<span class="c1"># 3. Prune edges with weigths below</span>
+<span class="c1">#</span>
+<span class="c1">#</span>
+
+
+<div class="viewcode-block" id="GenerativeGaussianGraph"><a class="viewcode-back" href="../../../topolearn.graph.html#topolearn.graph.ggg.GenerativeGaussianGraph">[docs]</a><span class="k">class</span> <span class="nc">GenerativeGaussianGraph</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Generative Gaussian Graph</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    k : int, default = 20</span>
+<span class="sd">        Number of nodes</span>
+
+<span class="sd">    init_method : {&#39;GNN&#39;, &#39;KMeans&#39;}, default=&#39;GNN&#39;</span>
+<span class="sd">        Initialisation method for the nodes. &#39;GNN&#39; for Gaussian Mixutre model or</span>
+<span class="sd">        &#39;KMeans&#39;. KMeans is faster, and preferrable if _k_ is set to a high value.</span>
+
+<span class="sd">    max_iter : int, optional</span>
+<span class="sd">        Maximum number of iteration</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    graph: networkx.graph</span>
+<span class="sd">        The individual probability weights (mixing probabilities) are accessible</span>
+<span class="sd">        as data attribute `p` on the edges and nodes, the input data points are</span>
+<span class="sd">        accessible as the `w` attribute on the nodes.</span>
+
+<span class="sd">        The learned graph is the fully connected Dealauney graph. To get a pruned version</span>
+<span class="sd">        of the graph, use the `pruned_graph(eps=eps)` method.</span>
+
+<span class="sd">    sigma: float</span>
+<span class="sd">        Standard deviation of the Gaussian model learned by the algorithm</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from topolearn.graph import ggg</span>
+<span class="sd">    &gt;&gt;&gt; from topolearn.util import plot_graph_with_data</span>
+<span class="sd">    &gt;&gt;&gt; from sklearn.datasets import make_moons, make_circles</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+
+<span class="sd">    &gt;&gt;&gt; X, _ = make_moons(noise=0.05, n_samples=10000)</span>
+<span class="sd">    &gt;&gt;&gt; learner = ggg.GenerativeGaussianGraph(k=20, sigma=1, max_iter=100, init_method=&quot;KMeans&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; graph = learner.fit(X)</span>
+<span class="sd">    &gt;&gt;&gt; # Plot the full graph fitted by gnn or kmeans</span>
+<span class="sd">    &gt;&gt;&gt; plot_graph_with_data(learner.graph, X)</span>
+<span class="sd">    &gt;&gt;&gt; # Plot number of eges vs log probabilties to identify intersting scales</span>
+<span class="sd">    &gt;&gt;&gt; learner.kneeplot()</span>
+<span class="sd">    &gt;&gt;&gt; # Get a pruned graph and plot</span>
+<span class="sd">    &gt;&gt;&gt; plot_graph_with_data( learner.pruned_graph(np.exp(-4)), X)</span>
+
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Implements the Generative Gaussian Graph algorithm described in </span>
+
+<span class="sd">    Aupetit, Michaël. 2005: Learning Topology with the Generative Gaussian Graph and </span>
+<span class="sd">    the EM Algorithm. In Advances in Neural Information Processing Systems. Vol. 18. MIT Press.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">max_iter</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">init_method</span><span class="o">=</span><span class="s2">&quot;GNN&quot;</span><span class="p">,</span> <span class="n">conv_rate</span><span class="o">=</span><span class="mf">0.001</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="n">eps</span>  <span class="c1"># Pruning threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">k</span>  <span class="c1"># Number of component</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Data dimension</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span> <span class="o">=</span> <span class="n">max_iter</span>  <span class="c1">#</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_method</span> <span class="o">=</span> <span class="n">init_method</span>
+        <span class="c1"># Output</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Graph representation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pi</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Config.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv_rate</span> <span class="o">=</span> <span class="n">conv_rate</span>  <span class="c1"># Stop when Δσ/σ &lt; conv_rate</span>
+
+<div class="viewcode-block" id="GenerativeGaussianGraph.fit"><a class="viewcode-back" href="../../../topolearn.graph.html#topolearn.graph.ggg.GenerativeGaussianGraph.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fit at Generative Gaussian Graph model</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : (array, shape = [n_samples, n_features])</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        networkx.graph</span>
+<span class="sd">            Graph with the fitted mixture probabilties</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">=</span> <span class="n">D</span> <span class="o">=</span> <span class="n">X</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c1"># Init nodes with GMM or KMeans</span>
+        <span class="n">w_init</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit_init</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">init_method</span><span class="p">)</span>
+        <span class="c1"># Delauney triangulation</span>
+        <span class="n">w_delauney</span> <span class="o">=</span> <span class="n">Delaunay</span><span class="p">(</span><span class="n">w_init</span><span class="p">)</span>
+
+        <span class="c1"># Delauney graph to networkx.graph</span>
+        <span class="n">DG</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">nodeid</span><span class="p">,</span> <span class="n">w</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">w_delauney</span><span class="o">.</span><span class="n">points</span><span class="p">):</span>
+            <span class="n">DG</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">nodeid</span><span class="p">,</span> <span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="p">)</span>
+        <span class="c1"># Simplices to unique edges</span>
+        <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">w_delauney</span><span class="o">.</span><span class="n">simplices</span><span class="p">:</span>
+            <span class="n">nx</span><span class="o">.</span><span class="n">add_cycle</span><span class="p">(</span><span class="n">DG</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+
+        <span class="n">N0</span> <span class="o">=</span> <span class="n">DG</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">()</span>
+        <span class="n">N1</span> <span class="o">=</span> <span class="n">DG</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()</span>
+
+        <span class="c1"># Initalise mixture probabilities</span>
+        <span class="n">pi</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">N0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">N1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))]</span>
+        <span class="n">pi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">N0</span> <span class="o">+</span> <span class="n">N1</span><span class="p">)</span>
+        <span class="n">pi</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*=</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="n">N0</span> <span class="o">+</span> <span class="n">N1</span><span class="p">)</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span>
+
+        <span class="c1"># Calculate the data distance matrices:</span>
+        <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">d_edge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">d_vertex</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">)</span> <span class="o">=</span> <span class="n">_calc_distances</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">DG</span><span class="p">)</span>
+
+        <span class="c1"># Run EM algorithm</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_iter</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">sigma</span> <span class="o">&lt;</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Did not converge, sigma = 0&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="n">prev_sigma</span> <span class="o">=</span> <span class="n">sigma</span>
+            <span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_update</span><span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Iteration </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">, sigma=</span><span class="si">{</span><span class="n">sigma</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">prev_sigma</span> <span class="o">-</span> <span class="n">sigma</span><span class="p">)</span> <span class="o">/</span> <span class="n">sigma</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_rate</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Converged&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+
+        <span class="c1"># Add probability weigths to graph</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pi</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">DG</span><span class="o">.</span><span class="n">nodes</span><span class="p">):</span>
+            <span class="n">DG</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n</span><span class="p">][</span><span class="s2">&quot;p&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="p">(</span><span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">))</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pi</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">DG</span><span class="o">.</span><span class="n">edges</span><span class="p">()):</span>
+            <span class="n">DG</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pi</span> <span class="o">=</span> <span class="n">pi</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">graph</span> <span class="o">=</span> <span class="n">DG</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span></div>
+
+    <span class="c1"># Initial fit.</span>
+    <span class="k">def</span> <span class="nf">_fit_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">n_components</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;GMM&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;GMM&quot;</span><span class="p">:</span>
+            <span class="c1"># It would make sense to experiment with initialisations.</span>
+            <span class="c1"># We use &#39;tied&#39; covariance here, which is reasonable since the</span>
+            <span class="c1"># GGG model use a shared variance coponent.</span>
+            <span class="n">gmm</span> <span class="o">=</span> <span class="n">mixture</span><span class="o">.</span><span class="n">GaussianMixture</span><span class="p">(</span>
+                <span class="n">n_components</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span> <span class="n">covariance_type</span><span class="o">=</span><span class="s2">&quot;tied&quot;</span><span class="p">,</span> <span class="n">init_params</span><span class="o">=</span><span class="s2">&quot;kmeans&quot;</span>
+            <span class="p">)</span>
+            <span class="n">gmm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+            <span class="n">node_centers</span> <span class="o">=</span> <span class="n">gmm</span><span class="o">.</span><span class="n">means_</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># method==&#39;KMeans&#39;:</span>
+            <span class="c1"># For large data samples, this should be a lot faster than GNN</span>
+            <span class="c1"># initialisation</span>
+            <span class="n">kmeans</span> <span class="o">=</span> <span class="n">MiniBatchKMeans</span><span class="p">(</span><span class="n">n_clusters</span><span class="o">=</span><span class="n">n_components</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+            <span class="n">node_centers</span> <span class="o">=</span> <span class="n">kmeans</span><span class="o">.</span><span class="n">cluster_centers_</span>
+
+        <span class="k">return</span> <span class="n">node_centers</span>
+
+    <span class="c1"># E and M-step.</span>
+    <span class="k">def</span> <span class="nf">_step_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+
+        <span class="c1"># Number of data points</span>
+        <span class="n">M</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Distributions.</span>
+        <span class="c1"># g0: M x N0, g1: M x N1</span>
+        <span class="c1"># Data in rows (axis=0), components in columns (axis=1)</span>
+        <span class="n">g0</span> <span class="o">=</span> <span class="n">_g0_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">d_vertex</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">)</span>
+        <span class="n">g1</span> <span class="o">=</span> <span class="n">_g1_matrix</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">d_edge</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">)</span>
+
+        <span class="c1"># assert np.sum(pi[0]) + np.sum(pi[1]) == 1, &quot;Probabilities does not sum to 1&quot;</span>
+        <span class="c1"># Pointwise probabilties.</span>
+        <span class="c1"># (Summing over axis=1 here corresponds to Aupetit Eq. (2))</span>
+        <span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span> <span class="o">=</span> <span class="n">_p_matrix</span><span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="n">g0</span><span class="p">,</span> <span class="n">g1</span><span class="p">)</span>
+
+        <span class="c1"># M - step: Update mixture probabilities,</span>
+        <span class="c1"># Aupetit Eq. (4), pi</span>
+        <span class="n">pi</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">M</span>
+        <span class="n">pi</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">M</span>
+
+        <span class="c1"># Update edge and vertex probabilities with new PI&#39;s</span>
+        <span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span> <span class="o">=</span> <span class="n">_p_matrix</span><span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="n">g0</span><span class="p">,</span> <span class="n">g1</span><span class="p">)</span>
+
+        <span class="c1"># E-step: Update sigma using current probabilities</span>
+        <span class="n">Lt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">L</span><span class="p">)</span>
+        <span class="c1"># Aupetit Eq. (5)</span>
+        <span class="n">I1</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">sigma</span>
+            <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="o">*</span> <span class="p">(</span>
+                <span class="n">erf</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">/</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+                <span class="o">-</span> <span class="n">erf</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">-</span> <span class="n">Lt</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">I2</span> <span class="o">=</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">-</span> <span class="n">Lt</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">-</span> <span class="n">Lt</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+            <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">Q</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">Q</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="c1"># Aupetit Eq. (4), sigma</span>
+        <span class="c1"># The zeros have no contribution to sigma, set to 0</span>
+        <span class="n">p1g1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">g1</span><span class="p">,</span> <span class="n">out</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">g1</span><span class="p">),</span> <span class="n">where</span><span class="o">=</span><span class="n">g1</span> <span class="o">&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">finfo</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span>
+        <span class="c1"># p1g1 = np.divide(p1, g1)</span>
+        <span class="n">sigma_vertices</span> <span class="o">=</span> <span class="n">p0</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">d_vertex</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">sigma_edges</span> <span class="o">=</span> <span class="n">p1g1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">sigma_edges</span> <span class="o">/=</span> <span class="n">Lt</span>
+        <span class="n">sigma_edges</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">d_edge</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+        <span class="n">sigma_edges</span> <span class="o">*=</span> <span class="n">I1</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">d_edge</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">I2</span>
+
+        <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sigma_edges</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">sigma_vertices</span><span class="p">))</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">D</span> <span class="o">*</span> <span class="n">M</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="n">sigma</span><span class="p">)</span>
+
+    <span class="c1"># Return a pruned version of the graph.</span>
+    <span class="c1"># Note that the pruned version keep the original probability weights, not</span>
+    <span class="c1"># renormalised to the pruned tree.</span>
+<div class="viewcode-block" id="GenerativeGaussianGraph.pruned_graph"><a class="viewcode-back" href="../../../topolearn.graph.html#topolearn.graph.ggg.GenerativeGaussianGraph.pruned_graph">[docs]</a>    <span class="k">def</span> <span class="nf">pruned_graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return an edge-pruned version of the graph.</span>
+
+<span class="sd">        Return a copy of the fitted graph where all edges with probability weight &lt;eps are pruned</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        eps : float</span>
+<span class="sd">            Minimum edge probabiltiy to keep</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        networkx.graph</span>
+<span class="sd">            Pruned graph</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">g</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">remove_edges</span> <span class="o">=</span> <span class="p">[(</span><span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">)</span> <span class="k">for</span> <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="s2">&quot;p&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">p</span> <span class="o">&lt;</span> <span class="n">eps</span><span class="p">]</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Removed </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">remove_edges</span><span class="p">)</span><span class="si">}</span><span class="s2"> edges&quot;</span><span class="p">)</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">remove_edges_from</span><span class="p">(</span><span class="n">remove_edges</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">g</span></div>
+
+    <span class="c1"># Return edge probabilities, useful for knee plots</span>
+<div class="viewcode-block" id="GenerativeGaussianGraph.edge_probs"><a class="viewcode-back" href="../../../topolearn.graph.html#topolearn.graph.ggg.GenerativeGaussianGraph.edge_probs">[docs]</a>    <span class="k">def</span> <span class="nf">edge_probs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">edgeprobs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;p&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="p">(</span><span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="n">attrib</span><span class="p">)</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">edgeprobs</span></div>
+
+    <span class="c1"># Retrieve mixing probabilities (pi) from graph</span>
+<div class="viewcode-block" id="GenerativeGaussianGraph.mixing_probabilities"><a class="viewcode-back" href="../../../topolearn.graph.html#topolearn.graph.ggg.GenerativeGaussianGraph.mixing_probabilities">[docs]</a>    <span class="k">def</span> <span class="nf">mixing_probabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span>
+        <span class="n">pi0</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">n1</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="s2">&quot;p&quot;</span><span class="p">)]</span>
+        <span class="n">pi1</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">graph</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="s2">&quot;p&quot;</span><span class="p">)]</span>
+        <span class="c1"># Renormalise in case of removed components</span>
+        <span class="n">pic</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pi0</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pi1</span><span class="p">)</span>
+        <span class="n">pi0</span> <span class="o">/=</span> <span class="n">pic</span>
+        <span class="n">pi1</span> <span class="o">/=</span> <span class="n">pic</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">pi0</span><span class="p">,</span> <span class="n">pi1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GenerativeGaussianGraph.kneeplot"><a class="viewcode-back" href="../../../topolearn.graph.html#topolearn.graph.ggg.GenerativeGaussianGraph.kneeplot">[docs]</a>    <span class="k">def</span> <span class="nf">kneeplot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">edge_probs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">edge_probs</span><span class="p">()</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">edge_probs</span><span class="p">),</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">edge_probs</span><span class="p">)))</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;log(p)&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Number of edges&quot;</span><span class="p">)</span></div>
+        
+
+    <span class="c1"># Transform data</span>
+    <span class="c1"># Return a tuple of of (p0, p1),</span>
+<div class="viewcode-block" id="GenerativeGaussianGraph.transform"><a class="viewcode-back" href="../../../topolearn.graph.html#topolearn.graph.ggg.GenerativeGaussianGraph.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">graph</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculate mixture probabilties for new features</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : (array, shape = [n_samples, n_features])</span>
+<span class="sd">            Input features</span>
+<span class="sd">        graph : networkx.graph, optional, default=self.graph</span>
+<span class="sd">            A fitted graph with mixture probabilties. This argument can be used to</span>
+<span class="sd">            get the mixture probabilties of a pruned graph.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        (array shape=[n_samples, n_vertices], array shape=[n_samples, n_edges])</span>
+<span class="sd">            Mixture probabilities for X using the (optionally pruned) fitted graph.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">graph</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">graph</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span>
+        <span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">d_edge</span><span class="p">,</span> <span class="n">d_vertex</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span> <span class="o">=</span> <span class="n">_calc_distances</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">graph</span><span class="p">)</span>
+        <span class="c1"># Extract the probability weights from current graph.  Since we may be</span>
+        <span class="c1"># dealing with a pruned subgraph, we cannot use self.pi</span>
+        <span class="n">pi</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixing_probabilities</span><span class="p">(</span><span class="n">graph</span><span class="p">)</span>
+        <span class="n">g0</span> <span class="o">=</span> <span class="n">_g0_matrix</span><span class="p">(</span><span class="n">d_vertex</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">)</span>
+        <span class="n">g1</span> <span class="o">=</span> <span class="n">_g1_matrix</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">d_edge</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">D</span><span class="p">)</span>
+
+        <span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span> <span class="o">=</span> <span class="n">_p_matrix</span><span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="n">g0</span><span class="p">,</span> <span class="n">g1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span></div></div>
+
+
+<span class="c1"># Calculate distance matrices:</span>
+<span class="c1">#</span>
+<span class="c1"># Q_ij length along the vertex</span>
+<span class="c1"># Lvq distance from v_i to projection on the vertex.</span>
+<span class="c1"># The likelihood formulas only use the distance from the vertex,</span>
+<span class="c1"># so we do not need to store the individual q_ij&#39;s.</span>
+<span class="c1"># In addition to the Qij (M x N1) matrix, calculate</span>
+<span class="c1"># d_edge = || q_ij - x_i || (M x N1)</span>
+<span class="c1"># d_vertex = || w - x_j ||  (M x N0)</span>
+<span class="c1"># L_vec = || w_a - w_b || (N1 x 1)</span>
+<span class="k">def</span> <span class="nf">_calc_distances</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">DG</span><span class="p">):</span>
+    <span class="c1"># Allocate matrices with dimension n x N1</span>
+    <span class="n">Q_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">DG</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()))</span>
+    <span class="c1"># Save || x_j - q_j ||</span>
+    <span class="n">d_edge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">DG</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">()))</span>
+    <span class="n">d_vertex</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">DG</span><span class="o">.</span><span class="n">number_of_nodes</span><span class="p">()))</span>
+    <span class="n">L_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">DG</span><span class="o">.</span><span class="n">number_of_edges</span><span class="p">())</span>
+
+    <span class="c1"># Length of each edge</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">DG</span><span class="o">.</span><span class="n">edges</span><span class="p">()):</span>
+        <span class="n">L_vec</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">DG</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n1</span><span class="p">][</span><span class="s2">&quot;w&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">DG</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n2</span><span class="p">][</span><span class="s2">&quot;w&quot;</span><span class="p">])</span>
+    <span class="c1"># Reshape L_vec from (n,) to (n,1)</span>
+    <span class="c1"># This will make elementwise operation between Q (dim n x k ) and L (dim k)</span>
+    <span class="c1"># understood as a rowwise operation</span>
+    <span class="n">L_vec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">L_vec</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">X</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">n1</span><span class="p">,</span> <span class="n">n2</span><span class="p">,</span> <span class="n">attrib</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">DG</span><span class="o">.</span><span class="n">edges</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+            <span class="n">w_a</span> <span class="o">=</span> <span class="n">DG</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n1</span><span class="p">][</span><span class="s2">&quot;w&quot;</span><span class="p">]</span>
+            <span class="n">w_b</span> <span class="o">=</span> <span class="n">DG</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">n2</span><span class="p">][</span><span class="s2">&quot;w&quot;</span><span class="p">]</span>
+            <span class="n">Q_ij</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">w_a</span><span class="p">,</span> <span class="n">w_b</span> <span class="o">-</span> <span class="n">w_a</span><span class="p">)</span> <span class="o">/</span> <span class="n">L_vec</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">q_ij</span> <span class="o">=</span> <span class="n">w_a</span> <span class="o">+</span> <span class="p">(</span><span class="n">w_b</span> <span class="o">-</span> <span class="n">w_a</span><span class="p">)</span> <span class="o">*</span> <span class="n">Q_ij</span> <span class="o">/</span> <span class="n">L_vec</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">Q_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">Q_ij</span>
+            <span class="n">d_edge</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">v</span> <span class="o">-</span> <span class="n">q_ij</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">attrib</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">DG</span><span class="o">.</span><span class="n">nodes</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="kc">True</span><span class="p">)):</span>
+        <span class="n">d_vertex</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">X</span> <span class="o">-</span> <span class="n">attrib</span><span class="p">[</span><span class="s2">&quot;w&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="p">(</span><span class="n">Q_matrix</span><span class="p">,</span> <span class="n">d_edge</span><span class="p">,</span> <span class="n">d_vertex</span><span class="p">,</span> <span class="n">L_vec</span><span class="p">)</span>
+
+
+<span class="c1"># g0: Vertex distribution.</span>
+<span class="c1"># Input is a matrix of distance from point to node, and current value</span>
+<span class="c1"># og the sigma parameter.</span>
+<span class="c1">#</span>
+<span class="c1"># Return a matrix of g0 probabilties for all points in the sample. Use the</span>
+<span class="c1"># pre-centered (xi-qi) values.</span>
+<span class="c1">#</span>
+<span class="c1"># Multivariate normal pdf.</span>
+<span class="c1"># Output dimension: M x N0</span>
+<span class="k">def</span> <span class="nf">_g0_matrix</span><span class="p">(</span><span class="n">d_vertex</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">D</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="n">D</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span>
+        <span class="o">-</span><span class="p">(</span><span class="n">d_vertex</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="c1"># g1: Edge distribution</span>
+<span class="c1"># Calculate g1 for all edges.</span>
+<span class="c1"># Input dimensions: Q_ij (M x N1), Lvq (N1), L_vec (1 x N1)</span>
+<span class="c1"># Output dimension: M x N1</span>
+<span class="k">def</span> <span class="nf">_g1_matrix</span><span class="p">(</span><span class="n">Q</span><span class="p">,</span> <span class="n">d_edge</span><span class="p">,</span> <span class="n">l_edge</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">D</span><span class="p">):</span>
+    <span class="n">Q_ji</span> <span class="o">=</span> <span class="n">Q</span><span class="o">.</span><span class="n">T</span>  <span class="c1"># Edgewise operations, want rows as edges</span>
+    <span class="c1"># Eq.(1) Aupetit 2005</span>
+    <span class="n">res</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="o">-</span><span class="p">(</span><span class="n">D</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">res</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">d_edge</span><span class="o">.</span><span class="n">T</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sigma</span><span class="o">**</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">res</span> <span class="o">/=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">l_edge</span>
+    <span class="n">res</span> <span class="o">*=</span> <span class="n">erf</span><span class="p">(</span><span class="n">Q_ji</span> <span class="o">/</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">)))</span> <span class="o">-</span> <span class="n">erf</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">Q_ji</span> <span class="o">-</span> <span class="n">l_edge</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="p">)</span>
+    <span class="c1"># Return matrix with data as rows, edges as columns</span>
+    <span class="k">return</span> <span class="n">res</span><span class="o">.</span><span class="n">T</span>
+
+
+<span class="c1"># Component probabilities</span>
+<span class="c1"># Apply Bayes theorem to go from  P(component|data) to P(data|component)</span>
+<span class="c1"># (The P&#39;s used in Aupetit eq. (4), denominator is eq. (2))</span>
+<span class="k">def</span> <span class="nf">_p_matrix</span><span class="p">(</span><span class="n">pi</span><span class="p">,</span> <span class="n">g0</span><span class="p">,</span> <span class="n">g1</span><span class="p">):</span>
+    <span class="n">p0</span> <span class="o">=</span> <span class="n">g0</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">pi</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">p1</span> <span class="o">=</span> <span class="n">g1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">pi</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">pxj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="n">p0</span> <span class="o">/=</span> <span class="n">pxj</span>
+    <span class="n">p1</span> <span class="o">/=</span> <span class="n">pxj</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">p0</span><span class="p">,</span> <span class="n">p1</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../topolearn.html">Topolearn</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.graph.html">topolearn.graph package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.persistence.html">topolearn.persistence package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.simpcomplex.html">topolearn.simpcomplex package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../topolearn.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Brage Førland.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -1,0 +1,263 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>topolearn.simpcomplex.simpcomplex &#8212; Topolearn 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for topolearn.simpcomplex.simpcomplex</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">networkx</span> <span class="k">as</span> <span class="nn">nx</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="kn">import</span> <span class="nn">matplotlib.colors</span> <span class="k">as</span> <span class="nn">colors</span>
+<span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">sparse</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">combinations</span>
+<span class="kn">from</span> <span class="nn">..persistence</span> <span class="kn">import</span> <span class="n">reduce_matrix_set</span><span class="p">,</span> <span class="n">find_birth_death_pairs_set</span>
+
+<span class="c1"># Container class for the simplical complexes</span>
+<span class="c1"># Init with a simplex_collection dictionary:</span>
+<span class="c1">#    keys: frozenset({nodes})</span>
+<span class="c1">#    values: tuple(counter, added_idx, filtration_value, distance_value )</span>
+<div class="viewcode-block" id="SimplicalComplex"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.simpcomplex.SimplicalComplex">[docs]</a><span class="k">class</span> <span class="nc">SimplicalComplex</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simplex_collection</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simplex_collection</span> <span class="o">=</span> <span class="n">simplex_collection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">simplex_index</span> <span class="o">=</span> <span class="kc">None</span>       <span class="c1"># Use lazy construction </span>
+
+    <span class="c1"># Return the 1-skeleton of the simplex as a</span>
+    <span class="c1"># networkx graph, add coordinates as w attributes if X is given.</span>
+<div class="viewcode-block" id="SimplicalComplex.graph"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.simpcomplex.SimplicalComplex.graph">[docs]</a>    <span class="k">def</span> <span class="nf">graph</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">nx</span><span class="o">.</span><span class="n">Graph</span><span class="p">()</span>
+        <span class="n">w</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">for</span> <span class="n">simplex_set</span><span class="p">,</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">fvalue</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_collection</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">simplex</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">simplex_set</span><span class="p">)</span>  <span class="c1"># Make subscribtable</span>
+            <span class="k">if</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">X</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">w</span> <span class="o">=</span> <span class="n">X</span><span class="p">[</span><span class="n">simplex</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+                <span class="n">graph</span><span class="o">.</span><span class="n">add_node</span><span class="p">(</span><span class="n">simplex</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">w</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">f</span><span class="o">=</span><span class="n">fvalue</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">dim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">graph</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">simplex</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">simplex</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">graph</span></div>
+
+    <span class="c1"># Return simplex list indexed by index-number</span>
+    <span class="c1"># Useful to reclaim simplex from index in boundary matrix </span>
+    <span class="c1"># Applications should use the get_simplex(idx) method</span>
+<div class="viewcode-block" id="SimplicalComplex.as_list"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.simpcomplex.SimplicalComplex.as_list">[docs]</a>    <span class="k">def</span> <span class="nf">as_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">simplex_list</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">[</span><span class="n">dim</span><span class="p">,</span> <span class="n">fvalue</span><span class="p">,</span> <span class="n">simplex</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">simplex</span><span class="p">,</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">fvalue</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_collection</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="k">return</span> <span class="n">simplex_list</span></div>
+
+    <span class="c1"># Retrieve a simplex from its index value.</span>
+    <span class="c1"># Returns a tuple (dim, birth_value, simplex, death_value)</span>
+<div class="viewcode-block" id="SimplicalComplex.get_simplex"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.simpcomplex.SimplicalComplex.get_simplex">[docs]</a>    <span class="k">def</span> <span class="nf">get_simplex</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  
+            <span class="bp">self</span><span class="o">.</span><span class="n">simplex_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_list</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_index</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span></div>
+
+
+    <span class="c1"># Create the boundary matrix from the simplices</span>
+<div class="viewcode-block" id="SimplicalComplex.boundary_matrix"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.simpcomplex.SimplicalComplex.boundary_matrix">[docs]</a>    <span class="k">def</span> <span class="nf">boundary_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sparse_mat</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simplex_collection</span><span class="p">)</span>  <span class="c1"># Number of simplices</span>
+        <span class="n">bmatrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">size</span><span class="p">,</span> <span class="n">size</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">simplex_set</span><span class="p">,</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">fvalue</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_collection</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">dim</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">boundary</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">simplex_set</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+                    <span class="c1"># Get the index number of the faces of the simplex</span>
+                    <span class="n">face</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">boundary</span><span class="p">)</span>
+                    <span class="n">bmatrix</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">simplex_collection</span><span class="p">[</span><span class="n">face</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">idx</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="n">sparse_mat</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">sparse</span><span class="o">.</span><span class="n">csc_array</span><span class="p">(</span><span class="n">bmatrix</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">bmatrix</span></div>
+
+    <span class="c1"># Create the boundary matrix as list of sets from the simplices</span>
+    <span class="c1"># The return value is a list of sets, where the sets contains the index value </span>
+    <span class="c1"># of the non-zero entries in the boundary matrix for each column.</span>
+<div class="viewcode-block" id="SimplicalComplex.boundary_sets"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.simpcomplex.SimplicalComplex.boundary_sets">[docs]</a>    <span class="k">def</span> <span class="nf">boundary_sets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">simplex_collection</span><span class="p">)</span>  <span class="c1"># Number of simplices</span>
+        <span class="n">boundary_cols</span> <span class="o">=</span> <span class="p">[</span> <span class="nb">set</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">size</span><span class="p">)]</span>
+        <span class="k">for</span> <span class="n">simplex_set</span><span class="p">,</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">fvalue</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_collection</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">dim</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">boundary</span> <span class="ow">in</span> <span class="n">combinations</span><span class="p">(</span><span class="n">simplex_set</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+                    <span class="c1"># Get the index number of the faces of the simplex</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">face</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">boundary</span><span class="p">)</span>
+                        <span class="n">boundary_cols</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="o">|=</span> <span class="p">{</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplex_collection</span><span class="p">[</span><span class="n">face</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="p">}</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Error: face </span><span class="si">{</span><span class="n">simplex_set</span><span class="si">}</span><span class="s2"> has missing boundary (</span><span class="si">{</span><span class="n">face</span><span class="si">}</span><span class="s2">)!&quot;</span><span class="p">)</span>
+                        <span class="k">return</span> <span class="kc">None</span>
+
+        <span class="k">return</span> <span class="n">boundary_cols</span></div>
+    
+
+    <span class="c1"># Find the birth death-pairs and add dimension and filtration value to</span>
+    <span class="c1"># output</span>
+<div class="viewcode-block" id="SimplicalComplex.birth_death_pairs"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.simpcomplex.SimplicalComplex.birth_death_pairs">[docs]</a>    <span class="k">def</span> <span class="nf">birth_death_pairs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+
+        <span class="n">simplices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_list</span><span class="p">()</span>  <span class="c1"># Simplices indexed by number</span>
+        <span class="n">boundaries</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">boundary_sets</span><span class="p">()</span>
+        <span class="n">reduced_matrix</span> <span class="o">=</span> <span class="n">reduce_matrix_set</span><span class="p">(</span><span class="n">boundaries</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">)</span>
+        <span class="n">pairs</span> <span class="o">=</span> <span class="n">find_birth_death_pairs_set</span><span class="p">(</span><span class="n">reduced_matrix</span><span class="p">)</span>
+        <span class="n">pairs_out</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">:</span>
+            <span class="c1"># Add dimension and filtration values</span>
+            <span class="n">sdim</span> <span class="o">=</span> <span class="n">simplices</span><span class="p">[</span><span class="n">b</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">dim</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">sdim</span> <span class="o">!=</span> <span class="n">dim</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">birth_f</span> <span class="o">=</span> <span class="n">simplices</span><span class="p">[</span><span class="n">b</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># Filtration value at birth</span>
+            <span class="n">death_f</span> <span class="o">=</span> <span class="n">simplices</span><span class="p">[</span><span class="n">d</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">d</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>  <span class="c1"># ..and death</span>
+            <span class="n">pairs_out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">b</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">sdim</span><span class="p">,</span> <span class="n">birth_f</span><span class="p">,</span> <span class="n">death_f</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">pairs_out</span></div></div>
+
+
+
+
+<div class="viewcode-block" id="Persistence"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.simpcomplex.Persistence">[docs]</a><span class="k">class</span> <span class="nc">Persistence</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pairs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pairs</span> <span class="o">=</span> <span class="n">pairs</span>
+
+<div class="viewcode-block" id="Persistence.plot"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.simpcomplex.Persistence.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>  <span class="n">max_dim</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">show_infinite</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">size_diagonal</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="c1"># Max dimension never die, remove from plot.</span>
+        <span class="n">pairs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pairs</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">max_dim</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">max_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+        <span class="n">incl</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">max_dim</span><span class="p">)</span>
+        <span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[</span><span class="n">incl</span><span class="p">,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[</span><span class="n">incl</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">pairs</span><span class="p">[</span><span class="n">incl</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="c1"># Plot the birth-death pairs as circles</span>
+        <span class="n">dimcolours</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;purple&quot;</span><span class="p">]</span>
+        <span class="n">pl</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="c1"># Ephemeral cycles which disappear within the same filtration values</span>
+        <span class="c1"># Plot these as small dots, the non-ephemeral as larger circles</span>
+        <span class="n">is_noise</span> <span class="o">=</span> <span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="n">d</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dim</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># Marker sizes</span>
+        <span class="n">s</span><span class="p">[</span><span class="n">is_noise</span><span class="p">]</span> <span class="o">=</span> <span class="n">size_diagonal</span>
+        <span class="n">s</span><span class="p">[</span><span class="n">is_noise</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span> <span class="o">=</span> <span class="n">size</span>
+        <span class="n">pl</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+            <span class="n">b</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">dim</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">ListedColormap</span><span class="p">(</span><span class="n">dimcolours</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">s</span>
+        <span class="p">)</span>
+        <span class="c1"># And the infinite pairs as triangles</span>
+        <span class="k">if</span> <span class="n">show_infinite</span><span class="p">:</span>
+            <span class="n">undead</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+            <span class="n">maxd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="n">pl</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+                <span class="n">b</span><span class="p">[</span><span class="n">undead</span><span class="p">],</span>
+                <span class="n">maxd</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">undead</span><span class="p">),</span>
+                <span class="n">c</span><span class="o">=</span><span class="n">dim</span><span class="p">[</span><span class="n">undead</span><span class="p">],</span>
+                <span class="n">cmap</span><span class="o">=</span><span class="n">colors</span><span class="o">.</span><span class="n">ListedColormap</span><span class="p">(</span><span class="n">dimcolours</span><span class="p">),</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+                <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;^&quot;</span><span class="p">,</span>
+            <span class="p">)</span></div>
+    
+    <span class="c1"># Return a dictionary of (edge) =&gt; (persistance)</span>
+    <span class="c1"># Only handles 0 and 1 homologies yet</span>
+<div class="viewcode-block" id="Persistence.as_dict"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.simpcomplex.Persistence.as_dict">[docs]</a>    <span class="k">def</span> <span class="nf">as_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pairs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>  <span class="ow">and</span> <span class="n">p</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">dim</span><span class="p">:</span>
+                <span class="n">out</span><span class="p">[</span> <span class="nb">frozenset</span><span class="p">({</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]})]</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">out</span></div></div>
+
+
+
+
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../topolearn.html">Topolearn</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.graph.html">topolearn.graph package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.persistence.html">topolearn.persistence package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.simpcomplex.html">topolearn.simpcomplex package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../topolearn.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Brage Førland.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

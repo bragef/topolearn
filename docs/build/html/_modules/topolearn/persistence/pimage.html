@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>topolearn.persistence.pimage &#8212; Topolearn 0.0.1 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/alabaster.css" />
+    <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+    <script src="../../../_static/jquery.js"></script>
+    <script src="../../../_static/underscore.js"></script>
+    <script src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+   
+  <link rel="stylesheet" href="../../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <h1>Source code for topolearn.persistence.pimage</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">pl</span>
+<span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">norm</span>
+
+
+<span class="c1"># A limited implementation of Persistence Images, as described in Adams et.al 2017:</span>
+<span class="c1"># Persistence Images: A Stable Vector Representation of Persistent Homology</span>
+<span class="c1">#</span>
+
+<span class="c1"># Default weight function suggested by Adams et.al.</span>
+<div class="viewcode-block" id="weight_linear"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.pimage.weight_linear">[docs]</a><span class="k">def</span> <span class="nf">weight_linear</span><span class="p">(</span><span class="n">u_p</span><span class="p">,</span> <span class="n">p_max</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Linear weight function</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    <span class="k">if</span> <span class="n">u_p</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+    <span class="k">elif</span> <span class="n">u_p</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">u_p</span> <span class="o">/</span> <span class="n">p_max</span></div>
+
+<span class="c1"># </span>
+<div class="viewcode-block" id="PersistenceImage"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.pimage.PersistenceImage">[docs]</a><span class="k">class</span> <span class="nc">PersistenceImage</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="c1"># p_max = max persistence for weight function</span>
+    <span class="c1"># weight_fun = function which takes persistance and max(persistance) </span>
+<div class="viewcode-block" id="PersistenceImage.fit"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.pimage.PersistenceImage.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pairs</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">p_max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">b_max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight_fun</span> <span class="o">=</span> <span class="n">weight_linear</span><span class="p">):</span>
+        <span class="c1"># Transform into birth-persistance coordinates</span>
+        <span class="n">pairs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span>
+        <span class="n">dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> 
+        <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># Births</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># Deaths</span>
+        <span class="c1"># Persistance values, T(B) = (b, d-b)</span>
+        <span class="c1"># T(B) = (b, d-b)</span>
+
+        <span class="c1"># Calculate grid and max birth/persistane and create a common</span>
+        <span class="c1"># grid for all dimensions</span>
+        <span class="n">p</span> <span class="o">=</span> <span class="n">d</span> <span class="o">-</span> <span class="n">b</span>
+        <span class="k">if</span> <span class="n">p_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">p_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">b_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">b_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+        <span class="c1"># grid_max = max(b_max, p_max)    # Symmetric grid? </span>
+        <span class="n">p_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p_max</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">resolution</span><span class="p">)</span>
+        <span class="n">delta_p</span> <span class="o">=</span> <span class="n">p_max</span> <span class="o">/</span> <span class="n">resolution</span>
+        <span class="n">b_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">b_max</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">resolution</span><span class="p">)</span>
+        <span class="n">delta_b</span> <span class="o">=</span> <span class="n">b_max</span> <span class="o">/</span> <span class="n">resolution</span>
+        <span class="c1"># Allocate images for each dimension</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">resolution</span><span class="p">,</span> <span class="n">resolution</span> <span class="p">))</span>
+
+        <span class="c1"># We only need the pairs with non-zero and finite persistance</span>
+        <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="c1"># ρ(z) = Σ w(u) φ_u(z)</span>
+        <span class="c1"># φ is a Gaussian pdf with diagonal covariance, therefore</span>
+        <span class="c1"># g(x,y)=g(x)g(y), and I(x,y) = Σ_u w(u_p) ∫g(x,u_b)∫g(y,u_p))</span>
+        <span class="k">for</span> <span class="n">u_b</span><span class="p">,</span> <span class="n">u_p</span><span class="p">,</span> <span class="n">sdim</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">dim</span><span class="p">[</span><span class="n">valid</span><span class="p">]):</span>
+            <span class="n">images</span><span class="p">[</span><span class="n">sdim</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span>
+                <span class="n">weight_fun</span><span class="p">(</span><span class="n">u_p</span><span class="p">,</span> <span class="n">p_max</span><span class="p">)</span>
+                <span class="o">*</span> <span class="p">(</span>
+                    <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">p_grid</span> <span class="o">+</span> <span class="n">delta_p</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">u_p</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+                    <span class="o">-</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">p_grid</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">u_p</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+                <span class="p">),</span>
+                <span class="p">(</span>
+                    <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">b_grid</span> <span class="o">+</span> <span class="n">delta_b</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">u_b</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+                    <span class="o">-</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">b_grid</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">u_b</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">images</span> <span class="o">=</span> <span class="n">images</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">b_max</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">p_max</span>  <span class="p">]</span>
+        <span class="c1"># Midpoint grid for plotting</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b_grid</span> <span class="o">=</span> <span class="n">b_grid</span> <span class="o">+</span> <span class="n">delta_b</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p_grid</span> <span class="o">=</span> <span class="n">p_grid</span> <span class="o">+</span> <span class="n">delta_p</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="c1"># Max homology dimenshion</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_dim</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span>      
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">images</span></div>
+
+<div class="viewcode-block" id="PersistenceImage.plot"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.pimage.PersistenceImage.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dim</span><span class="p">):</span>
+            <span class="n">pl</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">pl</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+            <span class="n">pl</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">extent</span><span class="p">,</span>  <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Blues&#39;</span><span class="p">)</span></div>
+
+
+    <span class="c1">#  ¯\_(ツ)_/¯</span>
+<div class="viewcode-block" id="PersistenceImage.as_vector"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.pimage.PersistenceImage.as_vector">[docs]</a>    <span class="k">def</span> <span class="nf">as_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span></div></div>
+
+
+
+
+</pre></div>
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../../topolearn.html">Topolearn</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.graph.html">topolearn.graph package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.persistence.html">topolearn.persistence package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../topolearn.simpcomplex.html">topolearn.simpcomplex package</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../topolearn.html">Documentation overview</a><ul>
+  <li><a href="../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script>$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2022, Brage Førland.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 4.5.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
