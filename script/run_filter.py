@@ -5,11 +5,6 @@ import numpy as np
 
 from topolearn.simpcomplex import RipsComplex, distance_matrix
 from topolearn import util
-import importlib
-importlib.reload(graph)
-importlib.reload(ph)
-importlib.reload(simpcomplex)
-importlib.reload(util)
 
 
 from sklearn.datasets import make_moons, make_circles

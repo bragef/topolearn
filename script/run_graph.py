@@ -1,4 +1,5 @@
-## %%
+
+# %%
 # Mapper example code
 import matplotlib.pyplot as pl
 import networkx as nx
@@ -15,16 +16,20 @@ X2, _ = make_moons(noise=0.1, random_state=1, n_samples=1000)
 X2[:,0] += 2
 X = np.vstack([X1,X2])
 
+X = X1
+
 learner = Mapper(n_intervals = 20)
 graph = learner.fit(X)
 plot_graph_with_data(graph, X, alpha=1)
 
+# learner.transform(X1)
 
-Xr = np.flip(X, axis=1) 
-learner = Mapper(n_intervals = 20)
-graph = learner.fit(Xr)
+#Xr = np.flip(X, axis=1) 
+#learner = Mapper(n_intervals = 20)
+#graph = learner.fit(Xr)
 
-plot_graph_with_data(graph, Xr, alpha=1)
+#plot_graph_with_data(graph, Xr, alpha=1)
+
 
 
 

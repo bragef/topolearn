@@ -30,7 +30,7 @@ class TopologicalLoss:
     Moor, Michael, Max Horn, Bastian Rieck, and Karsten Borgwardt. 2020. 'Topological Autoencoders'. 
     In Proceedings of the 37th International Conference on Machine Learning, 7045-54. PMLR.
     """
-    def __init__(self, filtration, max_dim):
+    def __init__(self, filtration, max_dim = None):
         self.filtration = filtration
         self.max_dim = max_dim
 
