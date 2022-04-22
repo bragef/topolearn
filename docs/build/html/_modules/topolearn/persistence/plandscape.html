@@ -36,9 +36,51 @@
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">pl</span>
 
 <div class="viewcode-block" id="PersistenceLandscape"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.plandscape.PersistenceLandscape">[docs]</a><span class="k">class</span> <span class="nc">PersistenceLandscape</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Persistence Landscapes</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    resolution : int, optional</span>
+<span class="sd">        Default 100</span>
+<span class="sd">    max_m : float, optional</span>
+<span class="sd">        Maximum value for the landscape function. Used to find the grid resolution, </span>
+<span class="sd">        if the values are used for statistics or comparison, these should be set to</span>
+<span class="sd">        a shared value for all the landscapes.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    matrix (array, shape=(resoution, n_persist))</span>
+<span class="sd">        Matrix with persistence landscape values. Note that only the horisontal resolution</span>
+<span class="sd">        is fixed.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from topolearn.simpcomplex import AlphaComplex</span>
+<span class="sd">    &gt;&gt;&gt; from topolearn.persistence import PersistenceLandscape</span>
+<span class="sd">    &gt;&gt;&gt; from sklearn.datasets import make_circles</span>
+
+<span class="sd">    &gt;&gt;&gt; X, _ = make_circles(noise=0.2,  n_samples=1000, random_state=50)</span>
+<span class="sd">    &gt;&gt;&gt; learner = AlphaComplex()</span>
+
+<span class="sd">    &gt;&gt;&gt; simplices = learner.fit(X)</span>
+<span class="sd">    &gt;&gt;&gt; pairs = simplices.birth_death_pairs()</span>
+<span class="sd">    &gt;&gt;&gt; p = PersistenceLandscape(resolution=400)</span>
+<span class="sd">    &gt;&gt;&gt; p.fit(pairs,dim=1)</span>
+<span class="sd">    &gt;&gt;&gt; p.plot()</span>
+<span class="sd">    &gt;&gt;&gt; print(p.matrix)</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Perstence landscapes are described in </span>
+<span class="sd">    Bubenik, Peter. 2015. ‘Statistical Topological Data Analysis Using </span>
+<span class="sd">    Persistence Landscapes’. The Journal of Machine Learning Research 16</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">resolution</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> <span class="n">max_m</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="n">resolution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_m</span> <span class="o">=</span> <span class="n">max_m</span>
+        
 
     <span class="c1"># For statistics to make sense, max_m need to be set beforehand.</span>
 <div class="viewcode-block" id="PersistenceLandscape.fit"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.plandscape.PersistenceLandscape.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pairs</span><span class="p">,</span> <span class="n">dim</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span> <span class="n">resolution</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> <span class="n">max_m</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
@@ -46,27 +88,22 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        pairs : _type_</span>
-<span class="sd">            _description_</span>
+<span class="sd">        pairs : array</span>
+<span class="sd">            List of birth-death pairs as returned by SimplicalComplex.birth_death_pairs)</span>
 <span class="sd">        dim : int, optional</span>
 <span class="sd">            _description_, by default 1</span>
-<span class="sd">        resolution : int, optional</span>
-<span class="sd">            _description_, by default 100</span>
-<span class="sd">        max_m : float, optional</span>
-<span class="sd">            Maximum value for the landscape function. Used to find the grid resolution, </span>
-<span class="sd">            if the values are used for statistics or comparison, these should be set to</span>
-<span class="sd">            a shared value for all the landscapes.</span>
 <span class="sd">            </span>
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
-<span class="sd">        matrix</span>
+<span class="sd">        (array, shape=(resoution, n_persist))</span>
 <span class="sd">            Matrix with persistence landscape values</span>
+<span class="sd">   </span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">pairs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span>
         <span class="n">sdim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> 
         <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># Births</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># Deaths)</span>
-
+        
         <span class="c1"># We only need the pairs with non-zero and finite persistance</span>
         <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">((</span><span class="n">d</span><span class="o">-</span><span class="n">b</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">sdim</span> <span class="o">==</span> <span class="n">dim</span><span class="p">))</span>
 
@@ -77,10 +114,11 @@
         <span class="c1"># Calculate a reasonable uppper limit guaranteed to include</span>
         <span class="c1"># the full triangular function. This should be set beforehand</span>
         <span class="c1"># to a common value if the landscapes are used for statistics!</span>
+        <span class="n">max_m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_m</span>
         <span class="k">if</span> <span class="n">max_m</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> 
             <span class="n">max_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
-        <span class="n">grid_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_m</span><span class="p">,</span> <span class="n">resolution</span><span class="p">)</span>
-        <span class="n">lambda_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">npoints</span><span class="p">,</span> <span class="n">resolution</span><span class="p">))</span>
+        <span class="n">grid_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_m</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span><span class="p">)</span>
+        <span class="n">lambda_mat</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">npoints</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span><span class="p">))</span>
 
         <span class="c1"># Triangular function for each point </span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">u_m</span><span class="p">,</span> <span class="n">u_h</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">h</span><span class="p">)):</span>
@@ -89,16 +127,18 @@
         <span class="n">landscape</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="o">-</span><span class="n">lambda_mat</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  
 
         <span class="bp">self</span><span class="o">.</span><span class="n">grid_m</span> <span class="o">=</span> <span class="n">grid_m</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">landscape</span> <span class="o">=</span> <span class="n">landscape</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span> <span class="o">=</span> <span class="n">landscape</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">landscape</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span></div>
 
 
 <div class="viewcode-block" id="PersistenceLandscape.plot"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.plandscape.PersistenceLandscape.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot the persistence landscape</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
         <span class="n">pl</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">landscape</span><span class="p">:</span>
-            <span class="n">pl</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$H_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">matrix</span><span class="p">:</span>
+            <span class="n">pl</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$H_</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dim</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
             <span class="n">pl</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">grid_m</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span></div></div>
 
 

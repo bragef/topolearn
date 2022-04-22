@@ -43,15 +43,38 @@
 <dt class="sig sig-object py" id="topolearn.simpcomplex.alphacomplex.AlphaComplex">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topolearn.simpcomplex.alphacomplex.</span></span><span class="sig-name descname"><span class="pre">AlphaComplex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/alphacomplex.html#AlphaComplex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.alphacomplex.AlphaComplex" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Alpha Complex</p>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">topolearn.util</span> <span class="kn">import</span> <span class="n">plot_graph_with_data</span><span class="p">,</span> <span class="n">plot_persistance_diagram</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">topolearn.simpcomplex</span> <span class="kn">import</span> <span class="n">AlphaComplex</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_moons</span><span class="p">,</span> <span class="n">make_circles</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">X1</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="n">make_circles</span><span class="p">(</span><span class="n">noise</span><span class="o">=</span><span class="mf">0.125</span><span class="p">,</span>  <span class="n">n_samples</span><span class="o">=</span><span class="mi">400</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X2</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="n">make_circles</span><span class="p">(</span><span class="n">noise</span><span class="o">=</span><span class="mf">0.125</span><span class="p">,</span>  <span class="n">n_samples</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">X1</span><span class="p">,</span> <span class="n">X2</span><span class="o">*</span><span class="mf">0.5</span> <span class="o">+</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">learner</span> <span class="o">=</span> <span class="n">AlphaComplex</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">simplices</span> <span class="o">=</span> <span class="n">learner</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">homologies</span> <span class="o">=</span> <span class="n">learner</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">plot_graph_with_data</span><span class="p">(</span><span class="n">simplices</span><span class="o">.</span><span class="n">graph</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plot_persistance_diagram</span><span class="p">(</span><span class="n">homologies</span><span class="p">)</span>
+</pre></div>
+</div>
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.alphacomplex.AlphaComplex.fit">
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">X_dist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/alphacomplex.html#AlphaComplex.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.alphacomplex.AlphaComplex.fit" title="Permalink to this definition">¶</a></dt>
-<dd><p>_summary_</p>
+<dd><p>Fit an alpha complex</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>X</strong> (<em>matrix</em>) – Feature matrix</p></li>
-<li><p><strong>X_dist</strong> (<em>matrix</em><em>, </em><em>optional</em>) – Feature distance matrix. If not specified, euclidian distances will be used.</p></li>
+<li><p><strong>X_dist</strong> (<em>matrix</em><em>, </em><em>optional</em>) – Feature distance matrix. If not supplied, Euclidian distance will be used
+as edge weights</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -66,12 +89,27 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.alphacomplex.AlphaComplex.fit_and_transform">
 <span class="sig-name descname"><span class="pre">fit_and_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/alphacomplex.html#AlphaComplex.fit_and_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.alphacomplex.AlphaComplex.fit_and_transform" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Fit an alpha complex and return the birth-death pairs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>Feature matrix</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list of birth death pairs</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.alphacomplex.AlphaComplex.transform">
 <span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/alphacomplex.html#AlphaComplex.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.alphacomplex.AlphaComplex.transform" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Return the persistance pairs from the fitted complex</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>list of birth death pairs</p>
+</dd>
+</dl>
+</dd></dl>
 
 </dd></dl>
 
@@ -168,15 +206,78 @@ neighbour. See  <a class="reference external" href="https://hdbscan.readthedocs.
 <dt class="sig sig-object py" id="topolearn.simpcomplex.ripscomplex.RipsComplex">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topolearn.simpcomplex.ripscomplex.</span></span><span class="sig-name descname"><span class="pre">RipsComplex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_radius</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_simplices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_steps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_distance_matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/ripscomplex.html#RipsComplex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.ripscomplex.RipsComplex" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Vietoris-Rips complex</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>max_dim</strong> (<em>int</em><em>, </em><em>optional</em>) – Maximum dimension of simplices, default 2</p></li>
+<li><p><strong>max_radius</strong> (<em>_type_</em><em>, </em><em>optional</em>) – Maximum filtration value</p></li>
+<li><p><strong>max_simplices</strong> (<em>_type_</em><em>, </em><em>optional</em>) – Stop after max_simplices. The algorithm will finish the current
+filtration iteration, and the returned number of simplices may
+therefore be higher than the set value.</p></li>
+<li><p><strong>num_steps</strong> (<em>int</em><em>, </em><em>optional</em>) – _description_, by default 500</p></li>
+<li><p><strong>input_distance_matrix</strong> (<em>bool</em><em>, </em><em>optional</em>) – Assume that input is a distance matrix, default True
+If this is set to false, the input is treated as a feature matrix</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">topolearn.util</span> <span class="kn">import</span> <span class="n">plot_graph_with_data</span><span class="p">,</span> <span class="n">plot_persistance_diagram</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">topolearn.simpcomplex</span> <span class="kn">import</span> <span class="n">RipsComplex</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_moons</span><span class="p">,</span> <span class="n">make_circles</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">X1</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="n">make_circles</span><span class="p">(</span><span class="n">noise</span><span class="o">=</span><span class="mf">0.125</span><span class="p">,</span>  <span class="n">n_samples</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X2</span><span class="p">,</span><span class="n">_</span> <span class="o">=</span> <span class="n">make_circles</span><span class="p">(</span><span class="n">noise</span><span class="o">=</span><span class="mf">0.125</span><span class="p">,</span>  <span class="n">n_samples</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">random_state</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">X1</span><span class="p">,</span> <span class="n">X2</span><span class="o">*</span><span class="mf">0.5</span> <span class="o">+</span> <span class="p">[</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">]])</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">learner</span> <span class="o">=</span> <span class="n">RipsComplex</span><span class="p">(</span> <span class="n">max_dim</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">max_radius</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">input_distance_matrix</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">simplices</span> <span class="o">=</span> <span class="n">learner</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">homologies</span> <span class="o">=</span> <span class="n">learner</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">plot_graph_with_data</span><span class="p">(</span><span class="n">simplices</span><span class="o">.</span><span class="n">graph</span><span class="p">(</span><span class="n">X</span><span class="p">),</span> <span class="n">X</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">plot_persistance_diagram</span><span class="p">(</span><span class="n">homologies</span><span class="p">)</span>
+</pre></div>
+</div>
+<p class="rubric">Notes</p>
+<p>The returned filtration values are calculated from the distance at which
+the simplex appear and is not dependent on the number of steps selected
+for the iterations.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.ripscomplex.RipsComplex.fit">
 <span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X_dist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/ripscomplex.html#RipsComplex.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.ripscomplex.RipsComplex.fit" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Fit a Vietoris-Rips complex</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X_dist</strong> (<em>matrix</em>) – If <code class="docutils literal notranslate"><span class="pre">RipsComplex``is</span> <span class="pre">instantiated</span> <span class="pre">with</span> <span class="pre">``input_distance_matrix=False</span></code>,
+the input matrix will be interpreted as a feature matrix, otherwise
+as a distance matrix.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Fitted simplical complex</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p><a class="reference internal" href="#topolearn.simpcomplex.simpcomplex.SimplicalComplex" title="topolearn.simpcomplex.simpcomplex.SimplicalComplex">SimplicalComplex</a></p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.ripscomplex.RipsComplex.fit_and_transform">
 <span class="sig-name descname"><span class="pre">fit_and_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/ripscomplex.html#RipsComplex.fit_and_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.ripscomplex.RipsComplex.fit_and_transform" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Fit a rips complex and return the birth-death pairs</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>X</strong> (<em>Feature matrix</em>) – </p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>list of birth death pairs</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.ripscomplex.RipsComplex.transform">
@@ -189,25 +290,13 @@ neighbour. See  <a class="reference external" href="https://hdbscan.readthedocs.
 <section id="module-topolearn.simpcomplex.simpcomplex">
 <span id="topolearn-simpcomplex-simpcomplex-module"></span><h2>topolearn.simpcomplex.simpcomplex module<a class="headerlink" href="#module-topolearn.simpcomplex.simpcomplex" title="Permalink to this headline">¶</a></h2>
 <dl class="py class">
-<dt class="sig sig-object py" id="topolearn.simpcomplex.simpcomplex.Persistence">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topolearn.simpcomplex.simpcomplex.</span></span><span class="sig-name descname"><span class="pre">Persistence</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pairs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/simpcomplex.html#Persistence"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.simpcomplex.Persistence" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<dl class="py method">
-<dt class="sig sig-object py" id="topolearn.simpcomplex.simpcomplex.Persistence.as_dict">
-<span class="sig-name descname"><span class="pre">as_dict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/simpcomplex.html#Persistence.as_dict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.simpcomplex.Persistence.as_dict" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topolearn.simpcomplex.simpcomplex.Persistence.plot">
-<span class="sig-name descname"><span class="pre">plot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">max_dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_infinite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size_diagonal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/simpcomplex.html#Persistence.plot"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.simpcomplex.Persistence.plot" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="py class">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.simpcomplex.SimplicalComplex">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topolearn.simpcomplex.simpcomplex.</span></span><span class="sig-name descname"><span class="pre">SimplicalComplex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">simplex_collection</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/simpcomplex.html#SimplicalComplex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.simpcomplex.SimplicalComplex" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Simplical complex</p>
+<p>Interface to the simplical complexes. SimplicalComplex objects are
+instantiated by <code class="docutils literal notranslate"><span class="pre">AlphaComplex</span></code> and <code class="docutils literal notranslate"><span class="pre">RipsComplex</span></code> and should not
+be created directly.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.simpcomplex.SimplicalComplex.as_list">
 <span class="sig-name descname"><span class="pre">as_list</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/simpcomplex.html#SimplicalComplex.as_list"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.simpcomplex.SimplicalComplex.as_list" title="Permalink to this definition">¶</a></dt>
@@ -216,7 +305,23 @@ neighbour. See  <a class="reference external" href="https://hdbscan.readthedocs.
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.simpcomplex.SimplicalComplex.birth_death_pairs">
 <span class="sig-name descname"><span class="pre">birth_death_pairs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/simpcomplex.html#SimplicalComplex.birth_death_pairs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.simpcomplex.SimplicalComplex.birth_death_pairs" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Find the homologies in the simplex</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>dim</strong> (<em>int</em><em>, </em><em>optional</em>) – If supplied, only the homologies of this dimension will be
+returned.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p><strong>list((int</strong> – int: death_index,
+int: homology dimension,
+float: birth filtration value,
+float: death filtration value))</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>birt_index,</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.simpcomplex.SimplicalComplex.boundary_matrix">
@@ -226,17 +331,53 @@ neighbour. See  <a class="reference external" href="https://hdbscan.readthedocs.
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.simpcomplex.SimplicalComplex.boundary_sets">
 <span class="sig-name descname"><span class="pre">boundary_sets</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/simpcomplex.html#SimplicalComplex.boundary_sets"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.simpcomplex.SimplicalComplex.boundary_sets" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Create boundary matrix</p>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>Boundary matrix in set-format (see <code class="docutils literal notranslate"><span class="pre">topolearn.homology.reduce_matrix_set</span></code>)</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.simpcomplex.SimplicalComplex.get_simplex">
 <span class="sig-name descname"><span class="pre">get_simplex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">idx</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/simpcomplex.html#SimplicalComplex.get_simplex"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.simpcomplex.SimplicalComplex.get_simplex" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Get simplex at index</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>idx</strong> (<em>int</em>) – Numeric index of simplex, i.e. column in boundary matrix</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Simplex</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>frozeneset()</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topolearn.simpcomplex.simpcomplex.SimplicalComplex.graph">
 <span class="sig-name descname"><span class="pre">graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/simpcomplex.html#SimplicalComplex.graph"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.simpcomplex.SimplicalComplex.graph" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Convert simplical complex to networkx graph object
+:param X: If a feature matrix is supplied, the row of the matrix</p>
+<blockquote>
+<div><p>will be saved in the <code class="docutils literal notranslate"><span class="pre">w</span></code> attribute of the returned
+nodes.</p>
+</div></blockquote>
+<dl class="field-list simple">
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>networkx.graph</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topolearn.simpcomplex.simpcomplex.SimplicalComplex.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/topolearn/simpcomplex/simpcomplex.html#SimplicalComplex.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#topolearn.simpcomplex.simpcomplex.SimplicalComplex.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>_summary_
+Alias of <code class="docutils literal notranslate"><span class="pre">birth_death_pairs()</span></code></p>
+</dd></dl>
 
 </dd></dl>
 

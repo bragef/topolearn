@@ -45,12 +45,54 @@
 <span class="c1">#</span>
 
 <div class="viewcode-block" id="RipsComplex"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.ripscomplex.RipsComplex">[docs]</a><span class="k">class</span> <span class="nc">RipsComplex</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Vietoris-Rips complex</span>
+<span class="sd">    </span>
 
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    max_dim : int, optional</span>
+<span class="sd">        Maximum dimension of simplices, default 2</span>
+<span class="sd">    max_radius : _type_, optional</span>
+<span class="sd">        Maximum filtration value </span>
+<span class="sd">    max_simplices : _type_, optional</span>
+<span class="sd">        Stop after max_simplices. The algorithm will finish the current</span>
+<span class="sd">        filtration iteration, and the returned number of simplices may </span>
+<span class="sd">        therefore be higher than the set value.         </span>
+<span class="sd">    num_steps : int, optional</span>
+<span class="sd">        _description_, by default 500</span>
+<span class="sd">    input_distance_matrix : bool, optional</span>
+<span class="sd">        Assume that input is a distance matrix, default True</span>
+<span class="sd">        If this is set to false, the input is treated as a feature matrix</span>
 
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; from topolearn.util import plot_graph_with_data, plot_persistance_diagram</span>
+<span class="sd">    &gt;&gt;&gt; from topolearn.simpcomplex import RipsComplex</span>
+<span class="sd">    &gt;&gt;&gt; from sklearn.datasets import make_moons, make_circles</span>
+
+<span class="sd">    &gt;&gt;&gt; X1,_ = make_circles(noise=0.125,  n_samples=40, random_state=50)</span>
+<span class="sd">    &gt;&gt;&gt; X2,_ = make_circles(noise=0.125,  n_samples=20, random_state=50)</span>
+<span class="sd">    &gt;&gt;&gt; X = np.vstack([X1, X2*0.5 + [2,0]])</span>
+
+<span class="sd">    &gt;&gt;&gt; learner = RipsComplex( max_dim = 2, max_radius=2, input_distance_matrix=False)</span>
+<span class="sd">    &gt;&gt;&gt; simplices = learner.fit(X)</span>
+<span class="sd">    &gt;&gt;&gt; homologies = learner.transform()</span>
+
+<span class="sd">    &gt;&gt;&gt; plot_graph_with_data(simplices.graph(X), X, axis=True, alpha=0.1)</span>
+<span class="sd">    &gt;&gt;&gt; plot_persistance_diagram(homologies)</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    The returned filtration values are calculated from the distance at which</span>
+<span class="sd">    the simplex appear and is not dependent on the number of steps selected</span>
+<span class="sd">    for the iterations.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        
         <span class="bp">self</span><span class="p">,</span> <span class="n">max_dim</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">max_radius</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_simplices</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_steps</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">input_distance_matrix</span> <span class="o">=</span><span class="kc">True</span>
     <span class="p">):</span>
+
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
         <span class="c1"># Limit number of simplices by different means</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_dim</span> <span class="o">=</span> <span class="n">max_dim</span>
@@ -65,6 +107,20 @@
     <span class="c1"># Fit from distance matrix</span>
     <span class="c1"># (Will not work with NaNs, prefiltered values should be set to inf)</span>
 <div class="viewcode-block" id="RipsComplex.fit"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.ripscomplex.RipsComplex.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X_dist</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fit a Vietoris-Rips complex</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X_dist : matrix            </span>
+<span class="sd">            If ``RipsComplex``is instantiated with ``input_distance_matrix=False``,</span>
+<span class="sd">            the input matrix will be interpreted as a feature matrix, otherwise</span>
+<span class="sd">            as a distance matrix.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SimplicalComplex</span>
+<span class="sd">            Fitted simplical complex</span>
+<span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_distance_matrix</span> <span class="o">==</span> <span class="kc">False</span><span class="p">:</span>
             <span class="n">X_dist</span> <span class="o">=</span> <span class="n">distance_matrix</span><span class="p">(</span><span class="n">X_dist</span><span class="p">)</span> 
@@ -168,6 +224,16 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplical_complex</span><span class="o">.</span><span class="n">birth_death_pairs</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="RipsComplex.fit_and_transform"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.ripscomplex.RipsComplex.fit_and_transform">[docs]</a>    <span class="k">def</span> <span class="nf">fit_and_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fit a rips complex and return the birth-death pairs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : Feature matrix</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of birth death pairs</span>
+<span class="sd">        &quot;&quot;&quot;</span> 
         <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span></div></div>
         

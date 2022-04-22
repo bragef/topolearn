@@ -41,30 +41,53 @@
 
 <span class="c1"># AlphaComplex filtering</span>
 <div class="viewcode-block" id="AlphaComplex"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.alphacomplex.AlphaComplex">[docs]</a><span class="k">class</span> <span class="nc">AlphaComplex</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Alpha Complex</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; from topolearn.util import plot_graph_with_data, plot_persistance_diagram</span>
+<span class="sd">    &gt;&gt;&gt; from topolearn.simpcomplex import AlphaComplex</span>
+<span class="sd">    &gt;&gt;&gt; from sklearn.datasets import make_moons, make_circles</span>
+
+<span class="sd">    &gt;&gt;&gt; X1,_ = make_circles(noise=0.125,  n_samples=400, random_state=50)</span>
+<span class="sd">    &gt;&gt;&gt; X2,_ = make_circles(noise=0.125,  n_samples=200, random_state=50)</span>
+<span class="sd">    &gt;&gt;&gt; X = np.vstack([X1, X2*0.5 + [2,0]])</span>
+
+<span class="sd">    &gt;&gt;&gt; learner = AlphaComplex()</span>
+<span class="sd">    &gt;&gt;&gt; simplices = learner.fit(X)</span>
+<span class="sd">    &gt;&gt;&gt; homologies = learner.transform()</span>
+
+<span class="sd">    &gt;&gt;&gt; plot_graph_with_data(simplices.graph(X), X, axis=True)</span>
+<span class="sd">    &gt;&gt;&gt; plot_persistance_diagram(homologies)</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_radius</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">verbose</span> <span class="o">=</span> <span class="n">verbose</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">max_radius</span> <span class="o">=</span> <span class="n">max_radius</span>
 
 <div class="viewcode-block" id="AlphaComplex.fit"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.alphacomplex.AlphaComplex.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">,</span> <span class="n">X_dist</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;_summary_</span>
+        <span class="sd">&quot;&quot;&quot;Fit an alpha complex</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        X : matrix</span>
 <span class="sd">            Feature matrix</span>
 <span class="sd">        X_dist : matrix, optional</span>
-<span class="sd">            Feature distance matrix. If not specified, euclidian distances will be used.</span>
+<span class="sd">            Feature distance matrix. If not supplied, Euclidian distance will be used</span>
+<span class="sd">            as edge weights</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        SimplicalComplex</span>
 <span class="sd">            Fitted simplical complex</span>
-<span class="sd">        &quot;&quot;&quot;</span>        
+
+<span class="sd">        &quot;&quot;&quot;</span>     
+
         <span class="n">DG</span> <span class="o">=</span> <span class="n">Delaunay</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 
         <span class="c1"># Distance matrix between points used for ball radius. We use euclidian </span>
-        <span class="c1"># distance here, for a weighted alpha complex, this should be replaced</span>
+        <span class="c1"># distance here, for a weighted alpha complex, this can be replace with </span>
         <span class="c1"># by weighted values.</span>
         <span class="k">if</span> <span class="n">X_dist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">X_dist</span> <span class="o">=</span> <span class="n">distance_matrix</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
@@ -110,10 +133,26 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplical_complex</span></div>
 
 <div class="viewcode-block" id="AlphaComplex.transform"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.alphacomplex.AlphaComplex.transform">[docs]</a>    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the persistance pairs from the fitted complex</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of birth death pairs</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
         <span class="c1"># Only transform self here; the fit_and_transform_method make more sense.</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simplical_complex</span><span class="o">.</span><span class="n">birth_death_pairs</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="AlphaComplex.fit_and_transform"><a class="viewcode-back" href="../../../topolearn.simpcomplex.html#topolearn.simpcomplex.alphacomplex.AlphaComplex.fit_and_transform">[docs]</a>    <span class="k">def</span> <span class="nf">fit_and_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fit an alpha complex and return the birth-death pairs</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        X : Feature matrix</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list of birth death pairs</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
         <span class="bp">self</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">()</span></div></div>
         

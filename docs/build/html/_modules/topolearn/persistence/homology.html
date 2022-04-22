@@ -45,6 +45,24 @@
 <span class="c1"># low(S1) = max(S1)</span>
 <span class="c1">#</span>
 <div class="viewcode-block" id="reduce_matrix_set"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.homology.reduce_matrix_set">[docs]</a><span class="k">def</span> <span class="nf">reduce_matrix_set</span><span class="p">(</span><span class="n">boundary_matrix</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reduce boundary matrix </span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    boundary_matrix : list of sets</span>
+<span class="sd">        Boundary matrix in set-format (se below)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Reduced matrix in set-format</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    ----- </span>
+<span class="sd">    The set-format of the boundary matrix is as follows: Each element</span>
+<span class="sd">    in the input array is a ``set()`` of the indices of the non-zero elements</span>
+<span class="sd">    of a column.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>    
     <span class="c1"># Represent columns as a set of non-zero simplices</span>
     <span class="c1"># r_array =  [ set(np.where(col)[0]) for col in boundary_matrix.T ]</span>
     <span class="n">r_array</span> <span class="o">=</span> <span class="n">boundary_matrix</span>
@@ -73,6 +91,17 @@
 
 
 <div class="viewcode-block" id="find_birth_death_pairs_set"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.homology.find_birth_death_pairs_set">[docs]</a><span class="k">def</span> <span class="nf">find_birth_death_pairs_set</span><span class="p">(</span><span class="n">reduced_set</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Find the birth-death pairs from a reduced boundary matrix</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    reduced_set : list of sets</span>
+<span class="sd">         Reduced matrix in set-format (see ``reduce_matrix_set()``)`</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    List of (birth, death) pairs as indices of the boundary matrix</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">low</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">max</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">b</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="o">-</span><span class="mi">1</span> <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">reduced_set</span><span class="p">])</span>
     <span class="n">birth_death_pairs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">low</span><span class="p">):</span>
@@ -93,7 +122,7 @@
 
 <span class="c1"># Reduce the boundary matrix, standard algort</span>
 <span class="c1"># (Should probably try a sparse matrix class here?)</span>
-<div class="viewcode-block" id="reduce_matrix"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.homology.reduce_matrix">[docs]</a><span class="k">def</span> <span class="nf">reduce_matrix</span><span class="p">(</span><span class="n">boundary_matrix</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_reduce_matrix</span><span class="p">(</span><span class="n">boundary_matrix</span><span class="p">):</span>
     <span class="c1"># Passed by ref; make a copy</span>
     <span class="n">reduced_matrix</span> <span class="o">=</span> <span class="n">boundary_matrix</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
     <span class="n">dim</span> <span class="o">=</span> <span class="n">reduced_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -115,13 +144,13 @@
             <span class="p">)</span>
             <span class="c1"># Update the low function</span>
             <span class="n">low</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">reduced_matrix</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]),</span> <span class="n">initial</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">reduced_matrix</span></div>
+    <span class="k">return</span> <span class="n">reduced_matrix</span>
 
 
 <span class="c1"># Given the reduced matrix, return the birth-death pairs.</span>
 <span class="c1"># Returns a list of birt-death value. Death set to none</span>
 <span class="c1"># for infinite pairs</span>
-<div class="viewcode-block" id="find_birth_death_pairs"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.homology.find_birth_death_pairs">[docs]</a><span class="k">def</span> <span class="nf">find_birth_death_pairs</span><span class="p">(</span><span class="n">reduced_matrix</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_find_birth_death_pairs</span><span class="p">(</span><span class="n">reduced_matrix</span><span class="p">):</span>
     <span class="n">low</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">col</span><span class="p">),</span> <span class="n">initial</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">col</span> <span class="ow">in</span> <span class="n">reduced_matrix</span><span class="o">.</span><span class="n">T</span><span class="p">])</span>
     <span class="n">birth_death_pairs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">low</span><span class="p">):</span>
@@ -131,12 +160,12 @@
                 <span class="n">birth_death_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">j</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">birth_death_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">j</span><span class="p">,</span> <span class="n">col</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
-    <span class="k">return</span> <span class="n">birth_death_pairs</span></div>
+    <span class="k">return</span> <span class="n">birth_death_pairs</span>
 
 
 <span class="c1"># Reduce the boundary matrix</span>
 <span class="c1"># Same as above, but faster version using bitarrays</span>
-<div class="viewcode-block" id="reduce_matrix_bit"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.homology.reduce_matrix_bit">[docs]</a><span class="k">def</span> <span class="nf">reduce_matrix_bit</span><span class="p">(</span><span class="n">boundary_matrix</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_reduce_matrix_bit</span><span class="p">(</span><span class="n">boundary_matrix</span><span class="p">):</span>
     <span class="n">dim</span> <span class="o">=</span> <span class="n">boundary_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
     <span class="c1"># Initial low-values for matrix. For reduced columns, we set</span>
     <span class="c1"># low(B_i) = -1, otherwise low(B_i) = max_j{j: B_ij != 0}</span>
@@ -166,7 +195,7 @@
     <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">ba</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">r_array</span><span class="p">):</span>
         <span class="n">r_matrix</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">ba</span><span class="o">.</span><span class="n">unpack</span><span class="p">(),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Reduced matrix in </span><span class="si">{</span><span class="n">ops</span><span class="si">}</span><span class="s2"> steps&quot;</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">r_matrix</span></div>
+    <span class="k">return</span> <span class="n">r_matrix</span>
 </pre></div>
 
           </div>

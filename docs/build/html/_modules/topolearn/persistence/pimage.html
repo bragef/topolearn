@@ -38,12 +38,11 @@
 
 <span class="c1"># A limited implementation of Persistence Images, as described in Adams et.al 2017:</span>
 <span class="c1"># Persistence Images: A Stable Vector Representation of Persistent Homology</span>
-<span class="c1">#</span>
+
 
 <span class="c1"># Default weight function suggested by Adams et.al.</span>
 <div class="viewcode-block" id="weight_linear"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.pimage.weight_linear">[docs]</a><span class="k">def</span> <span class="nf">weight_linear</span><span class="p">(</span><span class="n">u_p</span><span class="p">,</span> <span class="n">p_max</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Linear weight function</span>
-<span class="sd">    &quot;&quot;&quot;</span>    
+    <span class="sd">&quot;&quot;&quot;Linear weight function&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">u_p</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="mi">0</span>
     <span class="k">elif</span> <span class="n">u_p</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -51,17 +50,81 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">u_p</span> <span class="o">/</span> <span class="n">p_max</span></div>
 
-<span class="c1"># </span>
+
+<span class="c1">#</span>
 <div class="viewcode-block" id="PersistenceImage"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.pimage.PersistenceImage">[docs]</a><span class="k">class</span> <span class="nc">PersistenceImage</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">pass</span>
+    <span class="sd">&quot;&quot;&quot;Persistence images</span>
+
+<span class="sd">    Calculate the persistence images for all homology dimensions av a persistence pair</span>
+<span class="sd">    set.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sigma : int, optional</span>
+<span class="sd">        Standard deviation for the Gaussian kernel</span>
+<span class="sd">    resolution : int, optional</span>
+<span class="sd">        Grid resolution</span>
+<span class="sd">    p_max, p_max : float, optional</span>
+<span class="sd">        Maximum birth and death for output. If not specifed, max values of</span>
+<span class="sd">        data will be used.</span>
+<span class="sd">    weight_fun : function(p, p_max) -&gt; [0,1], optional</span>
+<span class="sd">        Weigth function for persistence values. If not specified, a linear weight </span>
+<span class="sd">        will be used.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; from topolearn.simpcomplex import AlphaComplex</span>
+<span class="sd">    &gt;&gt;&gt; from topolearn.persistence import PersistenceLandscape</span>
+<span class="sd">    &gt;&gt;&gt; from sklearn.datasets import make_circles</span>
+
+<span class="sd">    &gt;&gt;&gt; X, _ = make_circles(noise=0.1,  n_samples=500, random_state=50)</span>
+<span class="sd">    &gt;&gt;&gt; learner = AlphaComplex()</span>
+
+<span class="sd">    &gt;&gt;&gt; simplices = learner.fit(X)</span>
+<span class="sd">    &gt;&gt;&gt; pairs = simplices.birth_death_pairs()</span>
+<span class="sd">    &gt;&gt;&gt; p = PersistenceImage(resolution=100, sigma=0.1)</span>
+<span class="sd">    &gt;&gt;&gt; p.fit(pairs)</span>
+<span class="sd">    &gt;&gt;&gt; p.plot()</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    Persistence images are described in </span>
+<span class="sd">    Adams, Henry, Tegan Emerson, Michael Kirby, Rachel Neville, Chris Peterson, </span>
+<span class="sd">    Patrick Shipman, Sofya Chepushtanova, Eric Hanson, Francis Motta, and Lori </span>
+<span class="sd">    Ziegelmeier. 2017. ‘Persistence Images: A Stable Vector Representation of </span>
+<span class="sd">    Persistent Homology’. Journal of Machine Learning Research 18 (8): 1–35.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">p_max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">b_max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight_fun</span><span class="o">=</span><span class="n">weight_linear</span>
+    <span class="p">):</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span> <span class="o">=</span> <span class="n">resolution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p_max</span> <span class="o">=</span> <span class="n">p_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b_max</span> <span class="o">=</span> <span class="n">b_max</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_fun</span> <span class="o">=</span> <span class="n">weight_fun</span>
 
     <span class="c1"># p_max = max persistence for weight function</span>
-    <span class="c1"># weight_fun = function which takes persistance and max(persistance) </span>
-<div class="viewcode-block" id="PersistenceImage.fit"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.pimage.PersistenceImage.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pairs</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">resolution</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">p_max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">b_max</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">weight_fun</span> <span class="o">=</span> <span class="n">weight_linear</span><span class="p">):</span>
+    <span class="c1"># weight_fun = function which takes persistance and max(persistance)</span>
+<div class="viewcode-block" id="PersistenceImage.fit"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.pimage.PersistenceImage.fit">[docs]</a>    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pairs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Find the persistence images for a persistence pair set</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        pairs : array</span>
+<span class="sd">            List of birth-death pairs as returned by SimplicalComplex.birth_death_pairs)</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        (array, shape=(resoution, n_persist))</span>
+<span class="sd">            Matrix with persistence landscape values</span>
+<span class="sd">   </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
         <span class="c1"># Transform into birth-persistance coordinates</span>
         <span class="n">pairs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span>
-        <span class="n">dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span> 
+        <span class="n">dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
         <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># Births</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pairs</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>  <span class="c1"># Deaths</span>
         <span class="c1"># Persistance values, T(B) = (b, d-b)</span>
@@ -69,27 +132,32 @@
 
         <span class="c1"># Calculate grid and max birth/persistane and create a common</span>
         <span class="c1"># grid for all dimensions</span>
+        <span class="n">p_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_max</span>
+        <span class="n">b_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">b_max</span>
         <span class="n">p</span> <span class="o">=</span> <span class="n">d</span> <span class="o">-</span> <span class="n">b</span>
         <span class="k">if</span> <span class="n">p_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">p_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">b_max</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">b_max</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
-        <span class="c1"># grid_max = max(b_max, p_max)    # Symmetric grid? </span>
-        <span class="n">p_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p_max</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">resolution</span><span class="p">)</span>
-        <span class="n">delta_p</span> <span class="o">=</span> <span class="n">p_max</span> <span class="o">/</span> <span class="n">resolution</span>
-        <span class="n">b_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">b_max</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">resolution</span><span class="p">)</span>
-        <span class="n">delta_b</span> <span class="o">=</span> <span class="n">b_max</span> <span class="o">/</span> <span class="n">resolution</span>
+        <span class="c1"># grid_max = max(b_max, p_max)    # Symmetric grid?</span>
+        <span class="n">p_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">p_max</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resolution</span><span class="p">)</span>
+        <span class="n">delta_p</span> <span class="o">=</span> <span class="n">p_max</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span>
+        <span class="n">b_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">b_max</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">resolution</span><span class="p">)</span>
+        <span class="n">delta_b</span> <span class="o">=</span> <span class="n">b_max</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span>
         <span class="c1"># Allocate images for each dimension</span>
-        <span class="n">images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">resolution</span><span class="p">,</span> <span class="n">resolution</span> <span class="p">))</span>
+        <span class="n">images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resolution</span><span class="p">))</span>
 
         <span class="c1"># We only need the pairs with non-zero and finite persistance</span>
         <span class="n">valid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">p</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">p</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_dim</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
         <span class="c1"># ρ(z) = Σ w(u) φ_u(z)</span>
         <span class="c1"># φ is a Gaussian pdf with diagonal covariance, therefore</span>
         <span class="c1"># g(x,y)=g(x)g(y), and I(x,y) = Σ_u w(u_p) ∫g(x,u_b)∫g(y,u_p))</span>
+        <span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span>
         <span class="k">for</span> <span class="n">u_b</span><span class="p">,</span> <span class="n">u_p</span><span class="p">,</span> <span class="n">sdim</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">b</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">p</span><span class="p">[</span><span class="n">valid</span><span class="p">],</span> <span class="n">dim</span><span class="p">[</span><span class="n">valid</span><span class="p">]):</span>
             <span class="n">images</span><span class="p">[</span><span class="n">sdim</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span>
-                <span class="n">weight_fun</span><span class="p">(</span><span class="n">u_p</span><span class="p">,</span> <span class="n">p_max</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">weight_fun</span><span class="p">(</span><span class="n">u_p</span><span class="p">,</span> <span class="n">p_max</span><span class="p">)</span>
                 <span class="o">*</span> <span class="p">(</span>
                     <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">p_grid</span> <span class="o">+</span> <span class="n">delta_p</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">u_p</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
                     <span class="o">-</span> <span class="n">norm</span><span class="o">.</span><span class="n">cdf</span><span class="p">(</span><span class="n">p_grid</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">u_p</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
@@ -101,28 +169,27 @@
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">images</span> <span class="o">=</span> <span class="n">images</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">b_max</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">p_max</span>  <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">extent</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">b_max</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">p_max</span><span class="p">]</span>
         <span class="c1"># Midpoint grid for plotting</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">b_grid</span> <span class="o">=</span> <span class="n">b_grid</span> <span class="o">+</span> <span class="n">delta_b</span> <span class="o">/</span> <span class="mi">2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p_grid</span> <span class="o">=</span> <span class="n">p_grid</span> <span class="o">+</span> <span class="n">delta_p</span> <span class="o">/</span> <span class="mi">2</span>
-        <span class="c1"># Max homology dimenshion</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max_dim</span> <span class="o">=</span> <span class="n">images</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">-</span><span class="mi">1</span>      
+
+        <span class="c1"># If last dimension have no data, remove</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_dim</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dim</span><span class="p">[</span><span class="n">valid</span><span class="p">])</span>
+
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">images</span></div>
 
 <div class="viewcode-block" id="PersistenceImage.plot"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.pimage.PersistenceImage.plot">[docs]</a>    <span class="k">def</span> <span class="nf">plot</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dim</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Plot the persistence images for all homology dimensions</span>
+<span class="sd">        &quot;&quot;&quot;</span>       
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
             <span class="n">pl</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-            <span class="n">pl</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
-            <span class="n">pl</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">origin</span><span class="o">=</span><span class="s1">&#39;lower&#39;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">extent</span><span class="p">,</span>  <span class="n">cmap</span><span class="o">=</span><span class="s1">&#39;Blues&#39;</span><span class="p">)</span></div>
-
+            <span class="n">pl</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;H$_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+            <span class="n">pl</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span> <span class="n">extent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">extent</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;Blues&quot;</span><span class="p">)</span></div>
 
     <span class="c1">#  ¯\_(ツ)_/¯</span>
 <div class="viewcode-block" id="PersistenceImage.as_vector"><a class="viewcode-back" href="../../../topolearn.persistence.html#topolearn.persistence.pimage.PersistenceImage.as_vector">[docs]</a>    <span class="k">def</span> <span class="nf">as_vector</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">images</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span></div></div>
-
-
-
-
 </pre></div>
 
           </div>
