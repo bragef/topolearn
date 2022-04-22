@@ -2,6 +2,8 @@
 from  topolearn import simpcomplex, homology
 import numpy as np
 import importlib
+
+from topolearn.util.util import plot_persistance_diagram
 importlib.reload(simpcomplex)
 importlib.reload(homology)
 
@@ -34,29 +36,24 @@ print(1*(R2 == R3))
 
 
 # %%
-from topolearn import simpcomplex, homology, rips
+from topolearn import 
 import numpy as np
 import importlib
 from time import time
-importlib.reload(simpcomplex)
-importlib.reload(homology)
-importlib.reload(rips)
+
+
 from sklearn.datasets import make_moons, make_circles
 
 
-X1, y1 = make_circles(noise=0.125,  n_samples=300, random_state=50)
-X2, y2 = make_circles(noise=0.125,  n_samples=202, random_state=50)
-X2 = X2 * 0.5
-X2[:, 0] += 2
-X = np.array(np.concatenate((X1, X2), axis=0))
+X1,_ = make_circles(noise=0.125,  n_samples=300, random_state=50)
+X2,_ = make_circles(noise=0.125,  n_samples=202, random_state=50)
+X = np.vstack([X1, X2*0.5 + [0,2]])
 
-
-learner = rips.RipsComplex( max_dim = 2, num_steps = 1000, max_simplices = 100000)
-X_dist = rips.calc_distance_matrix(X)
+learner = RipsComplex( max_dim = 2, num_steps = 1000, max_simplices = 100000)
+X_dist = clc_distance_matrix(X)
 simplices = learner.fit(X_dist)
-
-# bmatrix = simplices.boundary_matrix(sparse_mat=False)
-bmatrix_sets = simplices.boundary_sets()
+# 
+# bmatrix_sets = simplices.boundary_sets()
 
 
 #  bmatrix_s = simplices.boundary_matrix_sparse()
@@ -90,6 +87,24 @@ bd5 == bd3
 #cProfile.run('homology.reduce_matrix_bit(bmatrix)')
 #cProfile.run('homology.reduce_matrix_bit_s(bmatrix)')
 
+
+
+# %%
+import numpy as np
+from topolearn.util import plot_graph_with_data, plot_persistance_diagram
+from topolearn.simpcomplex import RipsComplex, AlphaComplex
+from sklearn.datasets import make_moons, make_circles
+
+X1,_ = make_circles(noise=0.125,  n_samples=40, random_state=50)
+X2,_ = make_circles(noise=0.125,  n_samples=20, random_state=50)
+X = np.vstack([X1, X2*0.5 + [2,0]])
+
+learner = RipsComplex( max_dim = 2, max_radius=2, input_distance_matrix=False)
+simplices = learner.fit(X)
+homologies = learner.transform()
+
+plot_graph_with_data(simplices.graph(X), X, axis=True, alpha=0.1)
+plot_persistance_diagram(homologies)
 
 
 # %%

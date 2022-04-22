@@ -4,7 +4,7 @@ from scipy.spatial import KDTree
 
 def distance_matrix(X):
     """Calculate euclidian distance matrix
-
+    
     Parameters
     ----------
     X : matrix
@@ -87,7 +87,7 @@ def points_max_distance_edge(X_dist, simplex):
     ----------
     X_dist : matrix
         Distance matrix
-     simplex : set 
+    simplex : set 
         A set of indices of the points in the simplex
     Returns
     -------

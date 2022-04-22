@@ -12,6 +12,24 @@ from time import time
 # low(S1) = max(S1)
 #
 def reduce_matrix_set(boundary_matrix, verbose=1):
+    """Reduce boundary matrix 
+
+    Parameters
+    ----------
+    boundary_matrix : list of sets
+        Boundary matrix in set-format (se below)
+
+    Returns
+    -------
+    Reduced matrix in set-format
+
+    Notes
+    ----- 
+    The set-format of the boundary matrix is as follows: Each element
+    in the input array is a ``set()`` of the indices of the non-zero elements
+    of a column.
+
+    """    
     # Represent columns as a set of non-zero simplices
     # r_array =  [ set(np.where(col)[0]) for col in boundary_matrix.T ]
     r_array = boundary_matrix
@@ -40,6 +58,17 @@ def reduce_matrix_set(boundary_matrix, verbose=1):
 
 
 def find_birth_death_pairs_set(reduced_set):
+    """Find the birth-death pairs from a reduced boundary matrix
+
+    Parameters
+    ----------
+    reduced_set : list of sets
+         Reduced matrix in set-format (see ``reduce_matrix_set()``)`
+
+    Returns
+    -------
+    List of (birth, death) pairs as indices of the boundary matrix
+    """
     low = np.array([max(b) if len(b) > 0 else -1 for b in reduced_set])
     birth_death_pairs = list()
     for j, i in enumerate(low):
@@ -60,7 +89,7 @@ def find_birth_death_pairs_set(reduced_set):
 
 # Reduce the boundary matrix, standard algort
 # (Should probably try a sparse matrix class here?)
-def reduce_matrix(boundary_matrix):
+def _reduce_matrix(boundary_matrix):
     # Passed by ref; make a copy
     reduced_matrix = boundary_matrix.copy()
     dim = reduced_matrix.shape[0]
@@ -88,7 +117,7 @@ def reduce_matrix(boundary_matrix):
 # Given the reduced matrix, return the birth-death pairs.
 # Returns a list of birt-death value. Death set to none
 # for infinite pairs
-def find_birth_death_pairs(reduced_matrix):
+def _find_birth_death_pairs(reduced_matrix):
     low = np.array([np.max(np.where(col), initial=-1) for col in reduced_matrix.T])
     birth_death_pairs = list()
     for j, i in enumerate(low):
@@ -103,7 +132,7 @@ def find_birth_death_pairs(reduced_matrix):
 
 # Reduce the boundary matrix
 # Same as above, but faster version using bitarrays
-def reduce_matrix_bit(boundary_matrix):
+def _reduce_matrix_bit(boundary_matrix):
     dim = boundary_matrix.shape[0]
     # Initial low-values for matrix. For reduced columns, we set
     # low(B_i) = -1, otherwise low(B_i) = max_j{j: B_ij != 0}

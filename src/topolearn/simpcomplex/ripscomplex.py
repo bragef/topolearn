@@ -12,12 +12,54 @@ from .distance import distance_matrix, points_max_distance
 #
 
 class RipsComplex:
+    """Vietoris-Rips complex
+    
 
+    Parameters
+    ----------
+    max_dim : int, optional
+        Maximum dimension of simplices, default 2
+    max_radius : _type_, optional
+        Maximum filtration value 
+    max_simplices : _type_, optional
+        Stop after max_simplices. The algorithm will finish the current
+        filtration iteration, and the returned number of simplices may 
+        therefore be higher than the set value.         
+    num_steps : int, optional
+        _description_, by default 500
+    input_distance_matrix : bool, optional
+        Assume that input is a distance matrix, default True
+        If this is set to false, the input is treated as a feature matrix
 
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from topolearn.util import plot_graph_with_data, plot_persistance_diagram
+    >>> from topolearn.simpcomplex import RipsComplex
+    >>> from sklearn.datasets import make_moons, make_circles
+
+    >>> X1,_ = make_circles(noise=0.125,  n_samples=40, random_state=50)
+    >>> X2,_ = make_circles(noise=0.125,  n_samples=20, random_state=50)
+    >>> X = np.vstack([X1, X2*0.5 + [2,0]])
+
+    >>> learner = RipsComplex( max_dim = 2, max_radius=2, input_distance_matrix=False)
+    >>> simplices = learner.fit(X)
+    >>> homologies = learner.transform()
+
+    >>> plot_graph_with_data(simplices.graph(X), X, axis=True, alpha=0.1)
+    >>> plot_persistance_diagram(homologies)
+
+    Notes
+    -----
+    The returned filtration values are calculated from the distance at which
+    the simplex appear and is not dependent on the number of steps selected
+    for the iterations.
+
+    """
     def __init__(
-        
         self, max_dim=2, max_radius=None, max_simplices=None, num_steps=500, verbose=1, input_distance_matrix =True
     ):
+
         self.verbose = verbose
         # Limit number of simplices by different means
         self.max_dim = max_dim
@@ -32,6 +74,20 @@ class RipsComplex:
     # Fit from distance matrix
     # (Will not work with NaNs, prefiltered values should be set to inf)
     def fit(self, X_dist):
+        """Fit a Vietoris-Rips complex
+
+        Parameters
+        ----------
+        X_dist : matrix            
+            If ``RipsComplex``is instantiated with ``input_distance_matrix=False``,
+            the input matrix will be interpreted as a feature matrix, otherwise
+            as a distance matrix.
+
+        Returns
+        -------
+        SimplicalComplex
+            Fitted simplical complex
+        """
 
         if self.input_distance_matrix == False:
             X_dist = distance_matrix(X_dist) 
@@ -135,6 +191,16 @@ class RipsComplex:
         return self.simplical_complex.birth_death_pairs()
 
     def fit_and_transform(self, X):
+        """Fit a rips complex and return the birth-death pairs
+
+        Parameters
+        ----------
+        X : Feature matrix
+
+        Returns
+        -------
+        list of birth death pairs
+        """ 
         self.fit(X)
         return self.transform()
         

@@ -25,7 +25,7 @@ class GrowingNeuralGas:
     max_iter: int
         Maximum number of iteration
     conv_rate: float
-        Convergence criterion. Stop if |Δerr/err| < conv_rate
+        Convergence criterion. Stop if Δerr/err < conv_rate
     k: int
         Number of epochs 
 

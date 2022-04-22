@@ -8,30 +8,53 @@ from .distance import distance_matrix, points_max_distance
 
 # AlphaComplex filtering
 class AlphaComplex:
+    """Alpha Complex
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from topolearn.util import plot_graph_with_data, plot_persistance_diagram
+    >>> from topolearn.simpcomplex import AlphaComplex
+    >>> from sklearn.datasets import make_moons, make_circles
+
+    >>> X1,_ = make_circles(noise=0.125,  n_samples=400, random_state=50)
+    >>> X2,_ = make_circles(noise=0.125,  n_samples=200, random_state=50)
+    >>> X = np.vstack([X1, X2*0.5 + [2,0]])
+
+    >>> learner = AlphaComplex()
+    >>> simplices = learner.fit(X)
+    >>> homologies = learner.transform()
+
+    >>> plot_graph_with_data(simplices.graph(X), X, axis=True)
+    >>> plot_persistance_diagram(homologies)
+    """    
 
     def __init__(self, verbose=1, max_radius = None):
         self.verbose = verbose
         self.max_radius = max_radius
 
     def fit(self, X, X_dist = None):
-        """_summary_
+        """Fit an alpha complex
 
         Parameters
         ----------
         X : matrix
             Feature matrix
         X_dist : matrix, optional
-            Feature distance matrix. If not specified, euclidian distances will be used.
+            Feature distance matrix. If not supplied, Euclidian distance will be used
+            as edge weights
 
         Returns
         -------
         SimplicalComplex
             Fitted simplical complex
-        """        
+
+        """     
+
         DG = Delaunay(X)
 
         # Distance matrix between points used for ball radius. We use euclidian 
-        # distance here, for a weighted alpha complex, this should be replaced
+        # distance here, for a weighted alpha complex, this can be replace with 
         # by weighted values.
         if X_dist is None:
             X_dist = distance_matrix(X)
@@ -77,10 +100,26 @@ class AlphaComplex:
         return self.simplical_complex
 
     def transform(self):
+        """Return the persistance pairs from the fitted complex
+
+        Returns
+        -------
+        list of birth death pairs
+        """        
         # Only transform self here; the fit_and_transform_method make more sense.
         return self.simplical_complex.birth_death_pairs()
 
     def fit_and_transform(self, X):
+        """Fit an alpha complex and return the birth-death pairs
+
+        Parameters
+        ----------
+        X : Feature matrix
+
+        Returns
+        -------
+        list of birth death pairs
+        """        
         self.fit(X)
         return self.transform()
         

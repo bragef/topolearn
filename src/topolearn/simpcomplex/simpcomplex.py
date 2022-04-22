@@ -11,6 +11,13 @@ from ..persistence import reduce_matrix_set, find_birth_death_pairs_set
 #    keys: frozenset({nodes})
 #    values: tuple(counter, added_idx, filtration_value, distance_value )
 class SimplicalComplex:
+    """Simplical complex
+
+    Interface to the simplical complexes. SimplicalComplex objects are 
+    instantiated by ``AlphaComplex`` and ``RipsComplex`` and should not 
+    be created directly.
+
+    """    
     def __init__(self, simplex_collection):
         self.simplex_collection = simplex_collection
         self.simplex_index = None       # Use lazy construction 
@@ -18,6 +25,18 @@ class SimplicalComplex:
     # Return the 1-skeleton of the simplex as a
     # networkx graph, add coordinates as w attributes if X is given.
     def graph(self, X=None):
+        """Convert simplical complex to networkx graph object
+        Parameters
+        ----------
+        X : Feature matrix
+            If a feature matrix is supplied, the row of the matrix
+            will be saved in the ``w`` attribute of the returned
+            nodes.
+
+        Returns
+        -------
+        networkx.graph
+        """        
         graph = nx.Graph()
         w = None
         for simplex_set, (idx, dim, fvalue) in self.simplex_collection.items():
@@ -44,6 +63,18 @@ class SimplicalComplex:
     # Retrieve a simplex from its index value.
     # Returns a tuple (dim, birth_value, simplex, death_value)
     def get_simplex(self, idx):
+        """Get simplex at index
+
+        Parameters
+        ----------
+        idx : int
+            Numeric index of simplex, i.e. column in boundary matrix
+
+        Returns
+        -------
+        frozeneset()
+            Simplex
+        """        
         if self.simplex_index is None:  
             self.simplex_index = self.as_list()
         return self.simplex_index[idx]
@@ -68,6 +99,12 @@ class SimplicalComplex:
     # The return value is a list of sets, where the sets contains the index value 
     # of the non-zero entries in the boundary matrix for each column.
     def boundary_sets(self):
+        """Create boundary matrix
+
+        Returns
+        -------
+        Boundary matrix in set-format (see ``topolearn.homology.reduce_matrix_set``)
+        """
         size = len(self.simplex_collection)  # Number of simplices
         boundary_cols = [ set() for i in range(0, size)]
         for simplex_set, (idx, dim, fvalue) in self.simplex_collection.items():
@@ -87,7 +124,23 @@ class SimplicalComplex:
     # Find the birth death-pairs and add dimension and filtration value to
     # output
     def birth_death_pairs(self, dim=None, verbose=1):
+        """Find the homologies in the simplex
 
+        Parameters
+        ----------
+        dim : int, optional
+            If supplied, only the homologies of this dimension will be 
+            returned.
+
+        Returns
+        -------
+        list((int: birt_index, 
+              int: death_index, 
+              int: homology dimension, 
+              float: birth filtration value, 
+              float: death filtration value))
+
+        """
         simplices = self.as_list()  # Simplices indexed by number
         boundaries = self.boundary_sets()
         reduced_matrix = reduce_matrix_set(boundaries, verbose=verbose)
@@ -103,10 +156,14 @@ class SimplicalComplex:
             pairs_out.append((b, d, sdim, birth_f, death_f))
         return pairs_out
 
+    def transform(self):
+        """_summary_
+        Alias of ``birth_death_pairs()``
+        """        
+        return self.birth_death_pairs()
 
-
-
-class Persistence:
+# WIP/TODO: Refator to use this instead of the awkward raw pairs
+class _Persistence:
 
     def __init__(self, pairs):
         self.pairs = pairs
