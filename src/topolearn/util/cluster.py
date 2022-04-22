@@ -1,4 +1,3 @@
-
 from sklearn import mixture
 from sklearn.cluster import AgglomerativeClustering, KMeans, MiniBatchKMeans
 from numpy.random import random_sample
@@ -26,7 +25,6 @@ class KMeansGap:
     Notes
     -----
     (Why is this not available in sklearn?)
-
     """        
 
     def __init__(self, max_k = 10, gap_iter = 10):

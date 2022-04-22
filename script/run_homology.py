@@ -107,4 +107,4 @@ plot_graph_with_data(simplices.graph(X), X, axis=True, alpha=0.1)
 plot_persistance_diagram(homologies)
 
 
-# %%
+ema
