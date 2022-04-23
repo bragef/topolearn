@@ -165,7 +165,8 @@ class RipsComplex:
                             simplex_max_dist = points_max_distance(X_dist, new_simplex)
                             simplex_collection[new_simplex] = (
                                 sidx,
-                                dim,
+                                len(new_simplex)-1, 
+                                # dim,
                                 simplex_max_dist,
                             )
                             sidx += 1

@@ -86,7 +86,8 @@ class SimplicalComplex:
         bmatrix = np.zeros((size, size), dtype=bool)
         for simplex_set, (idx, dim, fvalue) in self.simplex_collection.items():
             if dim >= 1:
-                for boundary in combinations(simplex_set, dim):
+                # for boundary in combinations(simplex_set, dim):
+                for boundary in combinations(simplex_set, len(simplex_set)-1):
                     # Get the index number of the faces of the simplex
                     face = frozenset(boundary)
                     bmatrix[self.simplex_collection[face][0], idx] = True
@@ -109,7 +110,8 @@ class SimplicalComplex:
         boundary_cols = [ set() for i in range(0, size)]
         for simplex_set, (idx, dim, fvalue) in self.simplex_collection.items():
             if dim >= 1:
-                for boundary in combinations(simplex_set, dim):
+                # for boundary in combinations(simplex_set, dim):
+                for boundary in combinations(simplex_set, len(simplex_set)-1):
                     # Get the index number of the faces of the simplex
                     try:
                         face = frozenset(boundary)
